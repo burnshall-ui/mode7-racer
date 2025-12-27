@@ -1,5 +1,8 @@
-# mode7-racer
+# mode7-racer (Fork)
+
 Prototype F-Zero-style racing game made with Python/pygame.
+
+**This is a fork of [pschuermann97/mode7-racer](https://github.com/pschuermann97/mode7-racer) with gameplay improvements.**
 
 <p float="left">
   <img width="448" alt="0" src="https://user-images.githubusercontent.com/28012017/235456613-3b90fb13-49b9-4e57-9858-cec4e5bd37cd.png">
@@ -11,12 +14,21 @@ Prototype F-Zero-style racing game made with Python/pygame.
   <img width="449" alt="3" src="https://user-images.githubusercontent.com/28012017/235456683-48ec5b33-b2ac-4ee9-9655-f82cf4b70983.png">
 </p>
 
+## Changes in this Fork
+
+- Higher resolution with dynamic scaling system
+- Arrow key controls (more intuitive)
+- Adjusted game speed for better playability
+- SNES-style Game Over screen
+- Fixed backward jumping bug
+
 The Mode7 rendering module used in this implementation is based on the Mode7 tutorial by Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
 If you want to experiment with the code of the game prototype, see paragraph "Installation instructions" below.
 If you want to just try out the prototype and do not want to install the required dependencies on your machine, see "Test build".
 
-Please note that the content of this repository is available under the Creative Commons license CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/).
+Please note that the original content of this repository is available under the Creative Commons license CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/).
+Original author: [pschuermann97](https://github.com/pschuermann97)
 
 ## Installation instructions
 
@@ -30,14 +42,16 @@ Note: numba does not work with Python 3.11 yet (May 1, 2023).
 
 ## Test build
 
-You can find a test build under https://pschuermann97.itch.io/mode7-racer which features 4 consecutive races.
-The controls for the game are as follows:
+You can find the original test build under https://pschuermann97.itch.io/mode7-racer which features 4 consecutive races.
 
-- A/D: steer
-- K: accelerate
-- J: break
-- L: use booster (unlocked after finishing one lap)
-- R: restart race
+## Controls (this Fork)
+
+- **Arrow Left/Right**: Steer
+- **Arrow Up**: Accelerate
+- **Arrow Down**: Brake
+- **Space**: Use booster (unlocked after finishing one lap)
+- **R**: Restart race (debug)
 
 Every race requires 3 laps to complete.
-After finishing a race, press K to skip to the next one.
+After finishing a race, press Space to skip to the next one.
+If your energy reaches zero, press Space to restart.
