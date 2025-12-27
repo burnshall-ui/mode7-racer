@@ -116,11 +116,23 @@ LEAGUE_1_RACES = [
         init_player_angle = -111.565,
         is_foggy = False,
         music_track_path = BGM_DICT["price-cover"]
+    ),
+    Race( # 9: Speed Oval - lange Teststrecke für Speed-Gefühl
+        race_track_creator = TrackCreator.create_speed_oval,
+        floor_tex_path = "gfx/event_horizon_track1.png",  # Verwende erstmal Event Horizon Textur
+        bg_tex_path = "gfx/event_horizon_bg.png",
+        required_laps = STD_REQUIRED_LAPS,
+        race_mode = "time_attack",
+        init_player_pos_x = 40,  # Mitte der linken Geraden
+        init_player_pos_y = -100,  # Sicherer Start
+        init_player_angle = -1.57,  # -90 Grad in Radians (nach unten)
+        is_foggy = False,
+        music_track_path = BGM_DICT["price-cover"]
     )
 ]
 LEAGUE_1 = League(LEAGUE_1_RACES)
 
-# special league that is not meant to be played 
+# special league that is not meant to be played
 # but serves as the track list to select from in single race
 SINGLE_MODE_RACES = LEAGUE_1_RACES 
 

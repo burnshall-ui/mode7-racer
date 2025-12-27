@@ -485,3 +485,130 @@ class TrackCreator:
             recovery_rects = [recovery_rect1],
             has_guard_rails = True
         )
+
+    # Speed-Test Oval-Strecke mit Sprung-oder-umfahren Feature
+    # Vereinfachte Version mit breiten, überlappenden Rechtecken
+    def create_speed_oval():
+        track_width = 25  # Breitere Strecke für besseres Fahrgefühl
+
+        # -------------- Linke lange Gerade --------------
+        left_straight = CollisionRect(
+            pos = numpy.array([40, -200]),
+            w = track_width,
+            h = 320
+        )
+
+        # -------------- Untere Kurve (großes überlappenes Rechteck) --------------
+        bottom_curve = CollisionRect(
+            pos = numpy.array([100, -355]),
+            w = 145,
+            h = 30
+        )
+
+        # -------------- Rechte lange Gerade --------------
+        right_straight = CollisionRect(
+            pos = numpy.array([170, -200]),
+            w = track_width,
+            h = 320
+        )
+
+        # Sprung-Sektion auf der rechten Geraden
+        jump_section = CollisionRect(
+            pos = numpy.array([170, -150]),
+            w = track_width,
+            h = 40
+        )
+
+        # Umweg rechts daneben
+        detour_section = CollisionRect(
+            pos = numpy.array([205, -150]),
+            w = 45,
+            h = 40
+        )
+
+        # -------------- Obere Kurve (großes überlappenes Rechteck) --------------
+        top_curve = CollisionRect(
+            pos = numpy.array([105, -45]),
+            w = 155,
+            h = 30
+        )
+
+        # -------------- Ziellinie --------------
+        finish_line_coll = CollisionRect(
+            pos = numpy.array([40, -100]),
+            w = track_width,
+            h = 2
+        )
+
+        # -------------- Rampe für Sprung-Feature --------------
+        jump_ramp = CollisionRect(
+            pos = numpy.array([170, -165]),
+            w = track_width,
+            h = 0.5
+        )
+
+        # -------------- Dash-Plates --------------
+        # Untere Kurve
+        dash_1 = CollisionRect(
+            pos = numpy.array([80, -355]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        dash_2 = CollisionRect(
+            pos = numpy.array([120, -355]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        # Obere Kurve
+        dash_3 = CollisionRect(
+            pos = numpy.array([85, -45]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        dash_4 = CollisionRect(
+            pos = numpy.array([125, -45]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        # Vor dem Sprung
+        dash_5 = CollisionRect(
+            pos = numpy.array([170, -180]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        # Linke Gerade
+        dash_6 = CollisionRect(
+            pos = numpy.array([40, -250]),
+            w = DASH_PLATE_WIDTH,
+            h = DASH_PLATE_HEIGHT
+        )
+
+        # -------------- Recovery-Zone im Umweg --------------
+        recovery_zone = CollisionRect(
+            pos = numpy.array([215, -150]),
+            w = 20,
+            h = 35
+        )
+
+        return Track(
+            name = "speed_oval",
+            track_surface_rects = [
+                left_straight,
+                bottom_curve,
+                right_straight,
+                jump_section,
+                detour_section,
+                top_curve
+            ],
+            key_checkpoint_rects = [top_curve, bottom_curve],
+            ramp_rects = [jump_ramp],
+            finish_line_collider = finish_line_coll,
+            dash_plate_rects = [dash_1, dash_2, dash_3, dash_4, dash_5, dash_6],
+            recovery_rects = [recovery_zone],
+            has_guard_rails = True
+        )

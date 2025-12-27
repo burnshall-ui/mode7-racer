@@ -1,4 +1,4 @@
-# Settings for the machines that are controllable in the game.
+# Einstellungen für die Maschinen, die im Spiel steuerbar sind.
 
 import pygame
 from machine import Machine
@@ -15,46 +15,47 @@ def load_scaled_image(path):
         img = pygame.transform.scale(img, (new_width, new_height))
     return img
 
-# physics variables of the player machine
-PLAYER_COLLISION_RECT_WIDTH = 1 # width of the player collider (the same for all machines)
-PLAYER_COLLISION_RECT_HEIGHT = 1 # height of the player collider
-BASE_JUMP_HEIGHT = 100 # maximum height the player gains throughout a jump (Basis-Wert)
+# Physik-Variablen der Spieler-Maschine
+PLAYER_COLLISION_RECT_WIDTH = 1 # Breite des Spieler-Kollisions-Rechtecks (gleich für alle Maschinen)
+PLAYER_COLLISION_RECT_HEIGHT = 1 # Höhe des Spieler-Kollisions-Rechtecks
+BASE_JUMP_HEIGHT = 100 # Maximale Höhe, die der Spieler während eines Sprungs erreicht (Basis-Wert)
 JUMP_HEIGHT = int(BASE_JUMP_HEIGHT * RENDER_SCALE) # skalierte Sprunghöhe
-OBSTACLE_HIT_SPEED_RETENTION = 0.5 # percentage of its speed the player machine retains when hitting an obstacle
-MIN_BOUNCE_BACK_FORCE = 0.005 # minimal force applied in opposite direction when the player hits a wall (to prevent player getting stuck just outside the track boundaries)
+OBSTACLE_HIT_SPEED_RETENTION = 0.5 # Prozentsatz der Geschwindigkeit, den die Spieler-Maschine beim Aufprall auf ein Hindernis behält
+MIN_BOUNCE_BACK_FORCE = 0.005 # Minimale Kraft, die in entgegengesetzter Richtung angewendet wird, wenn der Spieler gegen eine Wand prallt (um zu verhindern, dass der Spieler knapp außerhalb der Streckengrenzen stecken bleibt)
 
 # Geschwindigkeits-Skalierung (1.0 = Original, 0.8 = 80%)
-SPEED_SCALE = 0.8
+# Auf 1.1 erhöht für gutes Speed-Gefühl (sweet spot!)
+SPEED_SCALE = 1.1
 
-# reference values for machine stats
+# Referenzwerte für Maschinen-Statistiken
 PURPLE_COMET_ACCELERATION = (5000 / 750) * SPEED_SCALE
 PURPLE_COMET_MAX_SPEED = 25 * SPEED_SCALE
 
-# maximum energy that a machine usually has
+# Maximale Energie, die eine Maschine normalerweise hat
 STD_MAX_ENERGY = 100
 
-# Factor that is used to compute the amount of energy 
-# the machine loses when hitting a normal obstacle 
-# from the current speed of the player.
-# Idea: at a speed of 1426 km/h (top speed of the Purple Comet, 0.05 in the interna of the physics engine), 
-# a machine would normally lose 5 energy units
-# (not applying the individual shield strength of the machine (Machine.hit_cost)).
+# Faktor, der verwendet wird, um die Menge an Energie zu berechnen,
+# die die Maschine beim Aufprall auf ein normales Hindernis verliert,
+# basierend auf der aktuellen Geschwindigkeit des Spielers.
+# Idee: Bei einer Geschwindigkeit von 1426 km/h (Höchstgeschwindigkeit des Purple Comet, 0.05 in den Interna der Physik-Engine)
+# würde eine Maschine normalerweise 5 Energieleinheiten verlieren
+# (ohne die individuelle Schildstärke der Maschine anzuwenden (Machine.hit_cost)).
 HIT_COST_SPEED_FACTOR = 5 / PURPLE_COMET_MAX_SPEED
 
-# Quadratic function that computes the height of the player during a jump
-# based on the time since the player jumped off the track.
+# Quadratische Funktion, die die Höhe des Spielers während eines Sprungs berechnet,
+# basierend auf der Zeit seit dem Sprung von der Strecke.
 # 
-# Parameters:
-# time: time since the player lift off (in seconds)
-# jump_duration: the duration of the entire jump from start to landing
+# Parameter:
+# time: Zeit seit dem Abheben des Spielers (in Sekunden)
+# jump_duration: die Dauer des gesamten Sprungs vom Start bis zur Landung
 def HEIGHT_DURING_JUMP(time, jump_duration):
     return - ( time * ( time - jump_duration ) ) * JUMP_HEIGHT
 
-# speed of the animations of the machines
+# Geschwindigkeit der Animationen der Maschinen
 DRIVING_ANIM_SPEED = 12
 IDLE_ANIM_SPEED = 12
 
-# machines that are playable in the game
+# Maschinen, die im Spiel spielbar sind
 
 PURPLE_COMET_GRAPHICS_ROOT_PATH = "gfx/machines/purple_comet/"
 
@@ -80,15 +81,15 @@ PURPLE_COMET_IDLE_ANIMATION = Animation(
 PURPLE_COMET = Machine(
     max_speed = PURPLE_COMET_MAX_SPEED,
     boosted_max_speed = PURPLE_COMET_MAX_SPEED * 1.4,
-    acceleration = PURPLE_COMET_ACCELERATION, # 750 frame update units to get to top speed
+    acceleration = PURPLE_COMET_ACCELERATION, # 750 Frame-Update-Einheiten, um Höchstgeschwindigkeit zu erreichen
     boosted_acceleration = PURPLE_COMET_ACCELERATION * 10,
-    brake = PURPLE_COMET_ACCELERATION * 2, # brake is twice as strong as accelerator
-    speed_loss = PURPLE_COMET_ACCELERATION / 3, # speed loss is a third the strength of the accelerator
+    brake = PURPLE_COMET_ACCELERATION * 2, # Bremse ist doppelt so stark wie der Beschleuniger
+    speed_loss = PURPLE_COMET_ACCELERATION / 3, # Geschwindigkeitsverlust ist ein Drittel der Stärke des Beschleunigers
     boosted_speed_loss = PURPLE_COMET_ACCELERATION * 6,
     max_centri = 20, 
     centri_increase = 10,
     centri_decrease = 50,
-    jump_duration_multiplier = 2 / PURPLE_COMET_MAX_SPEED, # jump should last 2 seconds if machine at max speed
+    jump_duration_multiplier = 2 / PURPLE_COMET_MAX_SPEED, # Sprung sollte 2 Sekunden dauern, wenn Maschine bei Höchstgeschwindigkeit ist
     boost_duration = 2,
     max_energy = STD_MAX_ENERGY,
     boost_cost = 19,
@@ -125,7 +126,7 @@ FASTER_PURPLE_COMET = Machine(
 
 SLOWER_PURPLE_COMET = Machine(
     max_speed = PURPLE_COMET.max_speed * 0.9,
-    boosted_max_speed = PURPLE_COMET.max_speed * 1.5, # strong booster
+    boosted_max_speed = PURPLE_COMET.max_speed * 1.5, # starker Booster
     acceleration = PURPLE_COMET.acceleration * 2,
     boosted_acceleration = PURPLE_COMET.boosted_acceleration,
     brake = PURPLE_COMET.brake,

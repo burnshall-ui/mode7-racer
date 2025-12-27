@@ -1,96 +1,96 @@
-# Class representing a machine,
-# including all physics engine related data (acceleration force, max speed, ...)
-# and graphics
+# Klasse, die eine Maschine repräsentiert,
+# einschließlich aller physik-Engine-bezogenen Daten (Beschleunigungskraft, Maximalgeschwindigkeit, ...)
+# und Grafiken
 class Machine:
     def __init__(self, max_speed, boosted_max_speed, acceleration, boosted_acceleration, brake, speed_loss, 
             boosted_speed_loss, max_centri, centri_increase, centri_decrease, jump_duration_multiplier, boost_duration, max_energy, 
             boost_cost, hit_cost, recover_speed,
             rotation_speed, idle_anim, driving_anim, shadow_image_path):
-        # ----------- physics variables initialization ----------------------
+        # ----------- Initialisierung der Physik-Variablen ----------------------
 
 
 
-        # top speed
+        # Höchstgeschwindigkeit
         self.max_speed = max_speed
-        self.boosted_max_speed = boosted_max_speed # max speed when having a boost active
+        self.boosted_max_speed = boosted_max_speed # Höchstgeschwindigkeit, wenn ein Boost aktiv ist
 
-        # acceleration force:
-        # quantity of speed added per frame in which the player has the accelerator on
+        # Beschleunigungskraft:
+        # Menge an Geschwindigkeit, die pro Frame hinzugefügt wird, in dem der Spieler den Beschleuniger gedrückt hat
         self.acceleration = acceleration
-        self.boosted_acceleration = boosted_acceleration # accel force is different (usually stronger) when the booster is used
+        self.boosted_acceleration = boosted_acceleration # Beschleunigungskraft ist unterschiedlich (normalerweise stärker), wenn der Booster verwendet wird
 
-        # brake force:
-        # quantity of speed subtracted per frame in which the player holds down the brakes
+        # Bremskraft:
+        # Menge an Geschwindigkeit, die pro Frame subtrahiert wird, in dem der Spieler die Bremsen gedrückt hält
         self.brake = brake
 
-        # speed loss:
-        # describes how well the machine retains speed when the player is not accelerating
-        # more precisely, this is the quantity of speed subtracted in each frame
-        # in which the player is not accelerating 
-        # (but neither pushing the brakes)
+        # Geschwindigkeitsverlust:
+        # Beschreibt, wie gut die Maschine ihre Geschwindigkeit behält, wenn der Spieler nicht beschleunigt
+        # Genauer gesagt ist dies die Menge an Geschwindigkeit, die in jedem Frame subtrahiert wird,
+        # in dem der Spieler nicht beschleunigt
+        # (aber auch nicht die Bremsen drückt)
         self.speed_loss = speed_loss
-        self.boosted_speed_loss = boosted_speed_loss # speed loss is different when having a boost active
+        self.boosted_speed_loss = boosted_speed_loss # Geschwindigkeitsverlust ist unterschiedlich, wenn ein Boost aktiv ist
 
-        # -------------------- centrifugal forces variables ------------------------------------------
+        # -------------------- Zentrifugalkraft-Variablen ------------------------------------------
 
-        # centrifugal force:
-        # Determines how hard the machine is pushed towards the outside when steering.
-        # More precisely, the centrifugal forces varibales quantify the percentage of the machine's maximum speed 
-        # that is applied as centrifugal force.
+        # Zentrifugalkraft:
+        # Bestimmt, wie stark die Maschine nach außen gedrückt wird, wenn gelenkt wird.
+        # Genauer gesagt quantifizieren die Zentrifugalkraft-Variablen den Prozentsatz der maximalen Geschwindigkeit der Maschine,
+        # der als Zentrifugalkraft angewendet wird.
 
-        # how much the centrifugal force increases in each frame the machine is turning
+        # wie sehr die Zentrifugalkraft in jedem Frame zunimmt, in dem die Maschine lenkt
         self.centri_increase = centri_increase 
 
-        # the limit for the maximum centrifugal force to be applied in a single frame
+        # das Limit für die maximale Zentrifugalkraft, die in einem einzelnen Frame angewendet werden soll
         self.max_centri = max_centri
 
-        # how much the centrifugal force decreases in each frame the machine is not turning
+        # wie sehr die Zentrifugalkraft in jedem Frame abnimmt, in dem die Maschine nicht lenkt
         self.centri_decrease = centri_decrease
 
-        # ---------------------- end of centrifugal forces variables -----------------------------------
+        # ---------------------- Ende der Zentrifugalkraft-Variablen -----------------------------------
 
-        # in seconds,
-        # multiplied with the current speed in order to determine duration of a jump
+        # in Sekunden,
+        # multipliziert mit der aktuellen Geschwindigkeit, um die Dauer eines Sprungs zu bestimmen
         self.jump_duration_multiplier = jump_duration_multiplier
 
-        # duration of a boost in seconds
+        # Dauer eines Boosts in Sekunden
         self.boost_duration = boost_duration
 
-        # maximum amount energy this machine can have
+        # maximale Energiemenge, die diese Maschine haben kann
         self.max_energy = max_energy
 
-        # how much energy the machine loses when using the booster
+        # wie viel Energie die Maschine verliert, wenn der Booster verwendet wird
         self.boost_cost = boost_cost
 
-        # used in determining the amount of energy the machine loses when hitting obstacles
+        # wird verwendet, um die Energiemenge zu bestimmen, die die Maschine verliert, wenn sie Hindernisse trifft
         self.hit_cost = hit_cost
 
-        # how fast the machine recovers energy when in a recovery zone
+        # wie schnell die Maschine Energie wiederherstellt, wenn sie in einer Wiederherstellungszone ist
         self.recover_speed = recover_speed
 
-        # how fast the player can rotate when steering
+        # wie schnell der Spieler rotieren kann, wenn er lenkt
         self.rotation_speed = rotation_speed
 
 
 
-        # ----------- end of physics variables initialization ----------------------
+        # ----------- Ende der Initialisierung der Physik-Variablen ----------------------
 
 
 
-        # ----------- graphics variables initialization ----------------------
+        # ----------- Initialisierung der Grafik-Variablen ----------------------
 
 
 
-        # images of the animation that is played when the machine is idle
+        # Bilder der Animation, die abgespielt wird, wenn die Maschine im Leerlauf ist
         self.idle_anim = idle_anim
 
-        # images of the animation that is played when the accelerator of the machine is on
+        # Bilder der Animation, die abgespielt wird, wenn der Beschleuniger der Maschine gedrückt ist
         self.driving_anim = driving_anim
 
-        # image of the shadow that the machine casts on the track
-        # (should be drawn under the machine)
+        # Bild des Schattens, den die Maschine auf die Strecke wirft
+        # (sollte unter der Maschine gezeichnet werden)
         self.shadow_image_path = shadow_image_path
 
 
 
-        # ----------- end of graphics variables initialization ----------------------
+        # ----------- Ende der Initialisierung der Grafik-Variablen ----------------------

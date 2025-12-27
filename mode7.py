@@ -1,157 +1,175 @@
 import pygame
 import numpy
 
-# JIT compiler and prange function for performance speedup
+# JIT-Compiler und prange-Funktion für Leistungssteigerung
 from numba import njit, prange
 
 from settings.renderer_settings import *
 
 class Mode7:
-    # Initialization method that loads the textures (specified via path passed to constructor), 
-    # links this mode-7 renderer to the app
-    # and sets some status variables.
+    # Initialisierungsmethode, die die Texturen lädt (spezifiziert über den an den Konstruktor übergebenen Pfad),
+    # diesen Mode-7-Renderer mit der App verknüpft
+    # und einige Statusvariablen setzt.
     # 
-    # The horizon parameter describes the horizon height of the scenes rendered with this renderer
-    # i.e. the minimum height of floor texture pixels 
-    # (for this, note that the y coordinate decreases down the screen). 
+    # Der horizon-Parameter beschreibt die Horizonthöhe der mit diesem Renderer gerenderten Szenen,
+    # d.h. die minimale Höhe der Bodentextur-Pixel
+    # (dabei beachten, dass die y-Koordinate nach unten auf dem Bildschirm abnimmt). 
     def __init__(self, app, floor_tex_path, bg_tex_path, is_foggy, horizon = STD_HORIZON):
-        # linking renderer to the app
+        # Renderer mit der App verknüpfen
         self.app = app
 
-        # intiailizing status variables
+        # Statusvariablen initialisieren
         self.is_foggy = is_foggy
         self.horizon = horizon
 
-        # load floor texture
+        # Bodentextur laden
         self.floor_tex = pygame.image.load(floor_tex_path).convert()
         
-        # store floor texture size for later use
+        # Bodentexturgröße für spätere Verwendung speichern
         self.floor_tex_size = self.floor_tex.get_size()
 
-        # Create 3D array representing the pixels representing the floor.
-        # More precisely: copies the pixels from the surface representing the floor texture
-        # into a new 3D array.
+        # 3D-Array erstellen, das die Pixel des Bodens darstellt.
+        # Genauer: Kopiert die Pixel von der Oberfläche, die die Bodentextur darstellt,
+        # in ein neues 3D-Array.
         self.floor_array = pygame.surfarray.array3d(self.floor_tex)
 
-        # load background texture
+        # Hintergrundtextur laden
         self.bg_tex = pygame.image.load(bg_tex_path).convert()
 
-        # scale ceiling texture to floor texture size
+        # Decken-Textur auf Bodentexturgröße skalieren
         self.bg_tex_size = self.bg_tex.get_size()
 
-        # represent ceiling by 3D array analogously to floor
+        # Decke durch 3D-Array analog zum Boden darstellen
         self.bg_array = pygame.surfarray.array3d(self.bg_tex)
 
-        # create an array representing the screen pixels
+        # Array erstellen, das die Bildschirmpixel darstellt
         self.screen_array = pygame.surfarray.array3d(pygame.Surface(WIN_RES))
 
-    # Updates the mode7-based environment.
-    # A camera reference is passed to be able
-    # to render the frame based on the camera's (and thus player's) current position and rotation.
+    # Aktualisiert die mode7-basierte Umgebung.
+    # Eine Kamera-Referenz wird übergeben, um
+    # den Frame basierend auf der aktuellen Position und Rotation der Kamera (und damit des Spielers) rendern zu können.
     def update(self, camera):
-        # rendering the frame
+        # Dynamischer FOV-Zoom basierend auf Spielergeschwindigkeit
+        # Je schneller, desto höher der Focal Length (Zoom-Effekt)
+        player_speed = camera.tracked_player.current_speed
+        max_speed = camera.tracked_player.machine.max_speed
+
+        # Speed-Faktor zwischen 0 und 1
+        speed_factor = min(player_speed / max_speed, 1.0) if max_speed > 0 else 0
+
+        # FOV erhöht sich subtil bei maximaler Geschwindigkeit
+        # 30% mehr bei max Speed - spürbar aber nicht zu krass
+        dynamic_focal_len = FOCAL_LEN * (1.0 + speed_factor * 0.3)
+
+        # Dynamische Background-Rotation - ganz leicht schneller
+        dynamic_bg_rotation = BACKGROUND_ROTATION_SPEED * (1.0 + speed_factor * 0.15)
+
+        # Frame rendern mit dynamischen Werten
         self.screen_array = self.render_frame(
-            floor_array = self.floor_array, 
-            bg_array = self.bg_array, 
-            screen_array = self.screen_array, 
-            floor_tex_size = self.floor_tex_size, 
-            bg_tex_size = self.bg_tex_size, 
-            is_foggy = self.is_foggy, 
+            floor_array = self.floor_array,
+            bg_array = self.bg_array,
+            screen_array = self.screen_array,
+            floor_tex_size = self.floor_tex_size,
+            bg_tex_size = self.bg_tex_size,
+            is_foggy = self.is_foggy,
             pos = camera.position,
             angle = camera.angle,
-            horizon = self.horizon
+            horizon = self.horizon,
+            focal_len = dynamic_focal_len,
+            bg_rotation_speed = dynamic_bg_rotation
         )
 
-    # Computes a single frame of the mode-7 environment pixel by pixel.
-    # Needs numba just-in-time compiler support (decorators) 
-    # to achieve a reasonable framerate when executed every frame.
+    # Berechnet einen einzelnen Frame der Mode-7-Umgebung Pixel für Pixel.
+    # Benötigt numba Just-in-Time-Compiler-Unterstützung (Dekoratoren),
+    # um eine vernünftige Framerate zu erreichen, wenn es jeden Frame ausgeführt wird.
     # 
-    # Parameters:
-    # floor_array: array containing the pixels of the floor texture
-    # bg_array: array containing the pixels of the background texture
-    # screen_array: array containing the rendered frame (updated pixel by pixel)
-    # floor_tex_size: size of the floor texture
-    # bg_tex_size: size of the background texture
-    # is_foggy: whether the scene of which a frame is rendered has a fog effect in it
-    # pos: current position of the camera
-    # angle: current angle by which the camera is rotated
-    # horizon: the min y coordinate of floor pixels (note: y increases down the screen)
+    # Parameter:
+    # floor_array: Array, das die Pixel der Bodentextur enthält
+    # bg_array: Array, das die Pixel der Hintergrundtextur enthält
+    # screen_array: Array, das den gerenderten Frame enthält (Pixel für Pixel aktualisiert)
+    # floor_tex_size: Größe der Bodentextur
+    # bg_tex_size: Größe der Hintergrundtextur
+    # is_foggy: ob die Szene, von der ein Frame gerendert wird, einen Nebeleffekt hat
+    # pos: aktuelle Position der Kamera
+    # angle: aktueller Winkel, um den die Kamera rotiert ist
+    # horizon: die minimale y-Koordinate der Bodenpixel (beachten: y nimmt nach unten auf dem Bildschirm zu)
     @staticmethod
     @njit(fastmath=True, parallel=True)
-    def render_frame(floor_array, bg_array, screen_array, floor_tex_size, bg_tex_size, 
-        is_foggy, pos, angle, horizon):
-        # Compute the sine and cosine values of the player angle
-        # to use them to render the environment based on the player's rotation.
+    def render_frame(floor_array, bg_array, screen_array, floor_tex_size, bg_tex_size,
+        is_foggy, pos, angle, horizon, focal_len, bg_rotation_speed):
+        # Sinus- und Kosinuswerte des Spielerwinkels berechnen,
+        # um sie zum Rendern der Umgebung basierend auf der Rotation des Spielers zu verwenden.
         sin, cos = numpy.sin(angle), numpy.cos(angle)
 
-        # Compute color value for every single pixel (i, j).
-        # prange function (instead of range function) used for outer loop for performance reasons.
+        # Farbwert für jedes einzelne Pixel (i, j) berechnen.
+        # prange-Funktion (anstatt range-Funktion) für äußere Schleife aus Leistungsgründen verwendet.
         for i in prange(WIDTH):
-            # compute background image render
+            # Hintergrundbild-Rendering berechnen
             for j in range(0, horizon):
-                # background image is shifted by angle the player is rotated by
-                screen_array[i][j] = bg_array[(i - int(angle * BACKGROUND_ROTATION_SPEED)) % bg_tex_size[0]][j % bg_tex_size[1]]
-            # compute floor render
+                # Hintergrundbild wird um den Winkel verschoben, um den der Spieler rotiert ist
+                # Verwendet dynamische bg_rotation_speed
+                screen_array[i][j] = bg_array[(i - int(angle * bg_rotation_speed)) % bg_tex_size[0]][j % bg_tex_size[1]]
+            # Boden-Rendering berechnen
             for j in range(horizon, HEIGHT):
-                # Let us imagine that the floor texture is tiled infinitely 
-                # in both horizontal and vertical direction on a 2D plane.
-                # Let us assume that this plane's horizontal and vertical axes
-                # are labeled with px and py, respectively.
-                # Furthermore assume that the screen's horizontal and vertical axes 
-                # are labeled with x and z, respectively,
-                # while y is an imaginary axis coming out of the screen.
+                # Stellen wir uns vor, dass die Bodentextur unendlich
+                # sowohl horizontal als auch vertikal auf einer 2D-Ebene gekachelt ist.
+                # Nehmen wir an, dass die horizontalen und vertikalen Achsen dieser Ebene
+                # mit px und py bezeichnet sind.
+                # Nehmen wir weiter an, dass die horizontalen und vertikalen Achsen des Bildschirms
+                # mit x und z bezeichnet sind,
+                # während y eine imaginäre Achse ist, die aus dem Bildschirm herauskommt.
                 #
-                # Idea: to emulate the mode-7 effect, compute which pixel of the floor texture 
-                # is over the pixel (i, j) of the screen in this frame
-                
-                # First step: compute the raw x, y, z coordinates
-                # without mode-7 style projection.
+                # Idee: Um den Mode-7-Effekt zu emulieren, berechnen, welches Pixel der Bodentextur
+                # über dem Pixel (i, j) des Bildschirms in diesem Frame liegt
+
+                # Erster Schritt: Rohe x, y, z Koordinaten berechnen
+                # ohne Mode-7-Style-Projektion.
                 #
-                # We adjust the x coordinate so the texture is at the center of the screen.
-                # Furthermore, the depth coordinate (y) is always shifted by the focal length of the camera.
-                # Lastly, we need to add a small constant to the screen height coordinate (z)
-                # to prevent divide-by-0 errors in the next step.
-                x = HALF_WIDTH - i  
-                y = j + FOCAL_LEN 
+                # Wir passen die x-Koordinate an, sodass die Textur in der Mitte des Bildschirms ist.
+                # Außerdem wird die Tiefenkoordinate (y) immer um die Brennweite der Kamera verschoben.
+                # Schließlich müssen wir eine kleine Konstante zur Bildschirmhöhenkoordinate (z) hinzufügen,
+                # um Division-durch-0-Fehler im nächsten Schritt zu verhindern.
+                x = HALF_WIDTH - i
+                y = j + focal_len  # Verwendet dynamischen focal_len
                 z = j - horizon + 0.01 
 
-                # Apply player's rotation (which is computed from the angle they are rotated by),
-                # "standard formula for rotation in 2D space".
+                # Spielerrotation anwenden (die aus dem Winkel berechnet wird, um den sie rotiert sind),
+                # "Standardformel für Rotation im 2D-Raum".
                 rx = x * cos + y * sin
                 ry = x * -sin + y * cos
 
-                # Apply mode-7 style projection.
-                # Camera position is used as offset here to allow movement
+                # Mode-7-Style-Projektion anwenden.
+                # Kameraposition wird hier als Offset verwendet, um Bewegung zu ermöglichen
                 px = (rx / z + pos[1]) * SCALE
                 py = (ry / z + pos[0]) * SCALE
 
-                # Compute which pixel of the floor texture is over the point (i, j)
+                # Berechnen, welches Pixel der Bodentextur über dem Punkt (i, j) liegt
                 floor_pos = int(px % floor_tex_size[0]), int(py % floor_tex_size[1])
 
-                # look up the respective color in the floor array
+                # Den entsprechenden Farbwert im Boden-Array nachschlagen
                 floor_col = floor_array[floor_pos]
 
-                # To prevent ugly artifacts at the horizon:
-                # compute some attenuation coefficient in the interval [0, 1] based on the "depth" value
+                # Um hässliche Artefakte am Horizont zu verhindern:
+                # Einen Dämpfungskoeffizienten im Intervall [0, 1] basierend auf dem "Tiefen"-Wert berechnen
                 attenuation = min(max(7.5 * (abs(z) / HALF_HEIGHT), 0), 1)
 
-                # Compute a fog effect depending on whether the rendered scene is foggy.
+                # Nebeleffekt berechnen, abhängig davon, ob die gerenderte Szene neblig ist.
                 fog = (1 - attenuation) * FOG_DENSITY if is_foggy else 0
                 
-                # apply attenuation and optional fog effect (component-wise, to color vector)
+                # Dämpfung und optionalen Nebeleffekt anwenden (komponentenweise auf Farbvektor)
                 floor_col = (floor_col[0] * attenuation + fog,
                     floor_col[1] * attenuation + fog,
                     floor_col[2] * attenuation + fog)
 
-                # fill the computed pixel into the screen array
+                # Das berechnete Pixel in das Bildschirm-Array füllen
                 screen_array[i, j] = floor_col
 
         return screen_array
 
     def draw(self):
-        # Draws the screen contents that were computed in the render_frame method.
+        # Zeichnet den Bildschirminhalt, der in der render_frame-Methode berechnet wurde.
         #
-        # Copies values from the array representing the screen 
-        # into the surface representing the screen.
-        # This surface is automatically rendered by pygame.
+        # Kopiert Werte aus dem Array, das den Bildschirm darstellt,
+        # in die Oberfläche, die den Bildschirm darstellt.
+        # Diese Oberfläche wird automatisch von pygame gerendert.
         pygame.surfarray.blit_array(self.app.screen, self.screen_array)

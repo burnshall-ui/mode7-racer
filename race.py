@@ -1,74 +1,74 @@
-# A data class holding all data that belongs to a race.
-# This includes:
-# - file paths to floor and background sprites
-# - the function that creates the collision map for the track that is played in this race
-# - the number of laps required to win the race
-# - the mode of the race (grand-prix, time-attack, ...)
-# - the file path of the music track that should play during the race
+# Eine Datenklasse, die alle Daten enthält, die zu einem Rennen gehören.
+# Dies umfasst:
+# - Dateipfade zu Boden- und Hintergrund-Sprites
+# - die Funktion, die die Kollisionskarte für die Strecke erstellt, die in diesem Rennen gefahren wird
+# - die Anzahl der Runden, die erforderlich sind, um das Rennen zu gewinnen
+# - den Modus des Rennens (Grand-Prix, Zeitangriff, ...)
+# - den Dateipfad des Musiktitels, der während des Rennens abgespielt werden soll
 class Race:
     def __init__(self, race_track_creator, floor_tex_path, bg_tex_path, required_laps, 
             init_player_pos_x, init_player_pos_y, init_player_angle, is_foggy, race_mode, music_track_path):
-        # create collision map for played track using the passed function
+        # Kollisionskarte für gefahrene Strecke mit der übergebenen Funktion erstellen
         self.race_track = race_track_creator()
         
-        # environment textures
+        # Umgebungstexturen
         self.floor_texture_path = floor_tex_path
         self.bg_texture_path = bg_tex_path
         
-        # lap counting
+        # Rundenzählung
         self.player_completed_laps = 0
         self.required_laps = required_laps
 
-        # initial player position and rotation
+        # Initiale Spielerposition und Rotation
         self.init_player_pos_x = init_player_pos_x
         self.init_player_pos_y = init_player_pos_y
         self.init_player_angle = init_player_angle
 
-        # whether the renderer should apply a fog effect during this race
+        # Ob der Renderer während dieses Rennens einen Nebeleffekt anwenden soll
         self.is_foggy = is_foggy
         
         self.race_mode = race_mode
 
         self.music_track_path = music_track_path
 
-    # Returns True if and only if the registered player 
-    # has finished the race on this track 
-    # (i.e. finished the required number of laps).  
+    # Gibt True zurück genau dann, wenn der registrierte Spieler
+    # das Rennen auf dieser Strecke beendet hat
+    # (d.h. die erforderliche Anzahl von Runden abgeschlossen hat).
     def player_finished_race(self):
         return self.player_completed_laps >= self.required_laps
 
-    # API for the App class to poll whether player has completed at least one lap.
-    # Idea: player should only be able to boost after first lap completed
+    # API für die App-Klasse, um abzufragen, ob der Spieler mindestens eine Runde abgeschlossen hat.
+    # Idee: Spieler sollte nur nach Abschluss der ersten Runde boosten können
     def player_completed_first_lap(self):
         return self.player_completed_laps >= 1
 
-    # First updates the passed flags of the key checkpoints of the track that this race is played on.
-    # Then checks whether the player has crossed the finish line.
-    # If so all key checkpoints are reset after checking whether player has passed all of them
-    # (if so, the player is credited a completed lap).
+    # Aktualisiert zuerst die übergebenen Flags der Schlüssel-Checkpoints der Strecke, auf der dieses Rennen gefahren wird.
+    # Prüft dann, ob der Spieler die Ziellinie überquert hat.
+    # Wenn ja, werden alle Schlüssel-Checkpoints zurückgesetzt, nachdem geprüft wurde, ob der Spieler alle passiert hat
+    # (wenn ja, wird dem Spieler eine abgeschlossene Runde gutgeschrieben).
     def update_lap_count(self, player_coll):
         self.race_track.update_key_checkpoints(player_coll)
 
-        # if player has crossed the finish line
+        # Wenn Spieler die Ziellinie überquert hat
         if self.race_track.is_on_finish_line(player_coll):
-            # if player has honestly finished a lap
+            # Wenn Spieler ehrlich eine Runde beendet hat
             if self.race_track.all_key_checkpoints_passed():
-                # Increment completed laps.
-                # If player has completed enough laps, initialize the finish sequence.
+                # Abgeschlossene Runden erhöhen.
+                # Wenn Spieler genug Runden abgeschlossen hat, Finish-Sequenz initialisieren.
                 self.player_completed_laps += 1
-                print(str(self.player_completed_laps) + " laps completed!")
+                print(str(self.player_completed_laps) + " Runden abgeschlossen!")
 
                 if self.player_finished_race():
-                    print("race finished!")
+                    print("Rennen beendet!")
             self.race_track.reset_key_checkpoints()
 
-    # Restarts the race and resets all race data to their initial value.
-    # E.g. player's completed laps, passed key checkpoints, ...
+    # Startet das Rennen neu und setzt alle Renndaten auf ihre initialen Werte zurück.
+    # Z.B. abgeschlossene Runden des Spielers, passierte Schlüssel-Checkpoints, ...
     def reset_data(self):
         self.player_completed_laps = 0
         self.race_track.reset_key_checkpoints()
 
-    # ------------- exposure of RaceTrack API ---------------------
+    # ------------- Verfügbarmachung der RaceTrack-API ---------------------
 
     def is_on_track(self, other):
         return self.race_track.is_on_track(other)
@@ -85,4 +85,4 @@ class Race:
     def guard_rails_active(self):
         return self.race_track.guard_rails_active()
 
-    # ------------- end of exposure of RaceTrack API --------------
+    # ------------- Ende der Verfügbarmachung der RaceTrack-API --------------

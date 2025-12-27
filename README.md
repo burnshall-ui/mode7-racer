@@ -1,8 +1,8 @@
 # mode7-racer (Fork)
 
-Prototype F-Zero-style racing game made with Python/pygame.
+Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 
-**This is a fork of [pschuermann97/mode7-racer](https://github.com/pschuermann97/mode7-racer) with gameplay improvements.**
+**Dies ist ein Fork von [pschuermann97/mode7-racer](https://github.com/pschuermann97/mode7-racer) mit Gameplay-Verbesserungen.**
 
 <p float="left">
   <img width="448" alt="0" src="https://user-images.githubusercontent.com/28012017/235456613-3b90fb13-49b9-4e57-9858-cec4e5bd37cd.png">
@@ -14,44 +14,44 @@ Prototype F-Zero-style racing game made with Python/pygame.
   <img width="449" alt="3" src="https://user-images.githubusercontent.com/28012017/235456683-48ec5b33-b2ac-4ee9-9655-f82cf4b70983.png">
 </p>
 
-## Changes in this Fork
+## Änderungen in diesem Fork
 
-- Higher resolution with dynamic scaling system
-- Arrow key controls (more intuitive)
-- Adjusted game speed for better playability
-- SNES-style Game Over screen
-- Fixed backward jumping bug
+- Höhere Auflösung mit dynamischem Skalierungssystem
+- Pfeiltasten-Steuerung (intuitiver)
+- Angepasste Spielgeschwindigkeit für bessere Spielbarkeit
+- SNES-Style Game Over Bildschirm
+- Rückwärtssprung-Bug behoben
 
-The Mode7 rendering module used in this implementation is based on the Mode7 tutorial by Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
+Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
-If you want to experiment with the code of the game prototype, see paragraph "Installation instructions" below.
-If you want to just try out the prototype and do not want to install the required dependencies on your machine, see "Test build".
+Wenn du mit dem Code des Spielprototyps experimentieren möchtest, siehe Abschnitt "Installationsanweisungen" unten.
+Wenn du den Prototyp nur ausprobieren möchtest und die erforderlichen Abhängigkeiten nicht auf deinem Computer installieren möchtest, siehe "Test-Build".
 
-Please note that the original content of this repository is available under the Creative Commons license CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/).
-Original author: [pschuermann97](https://github.com/pschuermann97)
+Bitte beachte, dass der ursprüngliche Inhalt dieses Repositories unter der Creative Commons Lizenz CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/) verfügbar ist.
+Ursprünglicher Autor: [pschuermann97](https://github.com/pschuermann97)
 
-## Installation instructions
+## Installationsanweisungen
 
-1. Install Python version 3.10 on your machine (https://www.python.org/downloads/release/python-31011/). In this project, Python 3.10.10 was used. Note that the project's scripts will NOT run with the Python 3.11 interpreter since not all dependencies work with Python 3.11.
-2. Install pygame 2.2.0. If you are using pip to manage your Python packages, this can be done by running the command `pip install pygame==2.2.0`.
-3. For performance optimization and to be able to run the Mode7 renderer in real time, this implementation uses the Python just-in-time compiler numba (https://numba.pydata.org/) which compiles numerical functions to machine code at runtime to greatly accelerate their execution.
-For this implementation, numba version 0.56.4 was used which you can install via pip by running the command `pip install numba==0.56.4`.
-Note: numba does not work with Python 3.11 yet (May 1, 2023).
-4. Clone this repository to your machine using `git clone`.
-5. Navigate to the root folder of this repository and run the script `main.py` using the Python interpreter.
+1. Installiere Python Version 3.10 auf deinem Computer (https://www.python.org/downloads/release/python-31011/). In diesem Projekt wurde Python 3.10.10 verwendet. Beachte, dass die Skripte des Projekts NICHT mit dem Python 3.11 Interpreter laufen, da nicht alle Abhängigkeiten mit Python 3.11 funktionieren.
+2. Installiere pygame 2.2.0. Wenn du pip zur Verwaltung deiner Python-Pakete verwendest, kann dies durch Ausführen des Befehls `pip install pygame==2.2.0` erfolgen.
+3. Zur Leistungsoptimierung und um den Mode7-Renderer in Echtzeit ausführen zu können, verwendet diese Implementierung den Python Just-in-Time-Compiler numba (https://numba.pydata.org/), der numerische Funktionen zur Laufzeit in Maschinencode kompiliert, um ihre Ausführung erheblich zu beschleunigen.
+Für diese Implementierung wurde numba Version 0.56.4 verwendet, die du über pip installieren kannst, indem du den Befehl `pip install numba==0.56.4` ausführst.
+Hinweis: numba funktioniert noch nicht mit Python 3.11 (Stand: 1. Mai 2023).
+4. Klone dieses Repository auf deinen Computer mit `git clone`.
+5. Navigiere zum Hauptordner dieses Repositories und führe das Skript `main.py` mit dem Python-Interpreter aus.
 
-## Test build
+## Test-Build
 
-You can find the original test build under https://pschuermann97.itch.io/mode7-racer which features 4 consecutive races.
+Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mode7-racer, der 4 aufeinanderfolgende Rennen bietet.
 
-## Controls (this Fork)
+## Steuerung (dieser Fork)
 
-- **Arrow Left/Right**: Steer
-- **Arrow Up**: Accelerate
-- **Arrow Down**: Brake
-- **Space**: Use booster (unlocked after finishing one lap)
-- **R**: Restart race (debug)
+- **Pfeil Links/Rechts**: Lenken
+- **Pfeil Hoch**: Beschleunigen
+- **Pfeil Runter**: Bremsen
+- **Leertaste**: Booster verwenden (freigeschaltet nach Abschluss einer Runde)
+- **R**: Rennen neu starten (Debug)
 
-Every race requires 3 laps to complete.
-After finishing a race, press Space to skip to the next one.
-If your energy reaches zero, press Space to restart.
+Jedes Rennen erfordert 3 Runden zum Abschluss.
+Nach Abschluss eines Rennens drücke Leertaste, um zum nächsten zu springen.
+Wenn deine Energie auf null sinkt, drücke Leertaste zum Neustart.

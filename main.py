@@ -1,9 +1,9 @@
-# foreign module imports
+# Importe externer Module
 import pygame, time
-from pygame import mixer # module for playing sound
+from pygame import mixer # Modul zum Abspielen von Sound
 import sys
 
-# import of the game settings
+# Import der Spiel-Einstellungen
 from settings.debug_settings import *
 from settings.machine_settings import *
 from settings.renderer_settings import *
@@ -14,7 +14,7 @@ from settings.key_settings import STD_CONFIRM_KEY, STD_DEBUG_RESTART_KEY
 from settings.league_settings import *
 from settings.music_settings import *
 
-# other imports from this project
+# Weitere Importe aus diesem Projekt
 from mode7 import Mode7
 from player import Player
 from camera import Camera
@@ -23,172 +23,173 @@ from race import Race
 from league import League
 from settings.track_settings import TrackCreator
 from ui import UI
+from menu import Menu
 
-# debug only imports
+# Nur für Debug-Importe
 from collision import CollisionRect
 
-# The class that handles/orchestrates all tasks involved in running the game.
-# This includes rendering the screen, 
-# listening to events (e.g. keys pressed, ...)
-# updating the game state and 
-# handling the game's internal clock.
+# Die Klasse, die alle Aufgaben zur Ausführung des Spiels verwaltet/koordiniert.
+# Dies umfasst das Rendern des Bildschirms,
+# das Abhören von Ereignissen (z.B. gedrückte Tasten, ...),
+# das Aktualisieren des Spielzustands und
+# das Verwalten der internen Spieluhr.
 class App:
     def __init__(self):
-        # ------------- general initialization --------------------
+        # ------------- Allgemeine Initialisierung --------------------
 
         self.screen = pygame.display.set_mode(WIN_RES)
         self.clock = pygame.time.Clock()
 
         self.in_racing_mode = False
 
-        # Creates a group of sprites that contains all the sprites
-        # that move across the screen.
+        # Erstellt eine Gruppe von Sprites, die alle Sprites enthält,
+        # die sich über den Bildschirm bewegen.
         self.moving_sprites = pygame.sprite.Group()
 
-        # Creates a group of sprites for all that do not move
+        # Erstellt eine Gruppe von Sprites für alle, die sich nicht bewegen
         self.static_sprites = pygame.sprite.Group()
 
-        # Creates a group of sprites for all sprites in the UI.
+        # Erstellt eine Gruppe von Sprites für alle Sprites in der UI.
         self.ui_sprites = pygame.sprite.Group()
 
-        # initializes the module responsible for playing sounds
+        # Initialisiert das Modul, das für das Abspielen von Sounds verantwortlich ist
         mixer.init()
         mixer.music.set_volume(MUSIC_VOLUME)
 
-        # ------------- end of general initialization -------------
+        # ------------- Ende der allgemeinen Initialisierung -------------
 
 
 
-        # ------------- (debug mode) game mode selection -----------------------
+        # ------------- Menü anzeigen -----------------------
 
-        if DEBUG_CHOOSE_GAME_MODE:
-            print("Choose a game mode: ")
-            print("1: League race")
-            print("2: Single race")
-            game_mode_choice = int(input("Your choice: "))
-        else:
-            game_mode_choice = DEFAULT_GAME_MODE
+        # Zeige Startbildschirm und Streckenauswahl
+        menu = Menu(self.screen)
+        selected_race_index = menu.run()
 
-        # ------------- end of game mode selection ----------------
+        # Einzelrennen-Modus (über Menü ausgewählt)
+        game_mode_choice = 2
 
+        # ------------- Ende der Menü-Auswahl ----------------
 
 
-        # ------------- initialize game (depending on mode) -------
+
+        # ------------- Spiel initialisieren (abhängig vom Modus) -------
 
         if game_mode_choice == 1:
             self.init_league_race_mode()
         if game_mode_choice == 2:
-            self.init_single_race_mode()
+            self.init_single_race_mode(race_choice=selected_race_index)
 
 
-        # ------------- end of mode-dependent game initialization -------
+        # ------------- Ende der modusabhängigen Spielinitialisierung -------
 
         
 
-    # Initialization for the league race mode:
-    # a league consists of five consecutive races that the player has to complete.
+    # Initialisierung für den Liga-Rennen-Modus:
+    # Eine Liga besteht aus fünf aufeinanderfolgenden Rennen, die der Spieler absolvieren muss.
     def init_league_race_mode(self):
-        # reinitialize sprite groups as empty groups (to tidy up)
+        # Sprite-Gruppen als leere Gruppen neu initialisieren (zum Aufräumen)
         self.initialize_sprite_groups()
 
-        # league selection (todo)
+        # Liga-Auswahl (todo)
         self.current_league = LEAGUES[0]
 
-        # initialize the actual race mode
+        # Den eigentlichen Rennmodus initialisieren
         self.init_race_mode(
             next_race = self.current_league.current_race()
         )
 
-    # 
-    def init_single_race_mode(self):
-        # tidy up sprites
+    # Initialisierung für den Einzelrennen-Modus
+    def init_single_race_mode(self, race_choice=None):
+        # Sprites aufräumen
         self.initialize_sprite_groups()
 
-        # ------------- track selection (todo) -------------
+        # ------------- Streckenauswahl -------------
 
-        race_choice = DEFAULT_SINGLE_RACE_CHOICE
+        if race_choice is None:
+            race_choice = DEFAULT_SINGLE_RACE_CHOICE
 
-        # ------------- end of track selection -------------
+        # ------------- Ende der Streckenauswahl -------------
 
-        # Init race mode and load race.
-        # We exploit that a single race can be seen as a League object 
-        # whose race list only contains one race.
+        # Rennmodus initialisieren und Rennen laden.
+        # Wir nutzen aus, dass ein Einzelrennen als League-Objekt betrachtet werden kann,
+        # dessen Rennliste nur ein Rennen enthält.
         self.current_league = League( [SINGLE_MODE_RACES[race_choice]] )
         self.init_race_mode(next_race = self.current_league.current_race())
         
-    # Contains some general (re-)initialization logic for any game mode
-    # in which races are played. 
-    # This includes creating the respective groups for sprites, 
-    # initializing some status flags,
-    # initializing the racing UI, ...
+    # Enthält allgemeine (Neu-)Initialisierungslogik für jeden Spielmodus,
+    # in dem Rennen gefahren werden.
+    # Dies umfasst das Erstellen der jeweiligen Gruppen für Sprites,
+    # das Initialisieren einiger Status-Flags,
+    # das Initialisieren der Renn-UI, ...
     #
-    # Parameters:
-    # next_race - next race that should be played after (re-)initialization
+    # Parameter:
+    # next_race - Nächstes Rennen, das nach der (Neu-)Initialisierung gespielt werden soll
     def init_race_mode(self, next_race):
-        # player can set this flag to True via a button press to indicate that the next race should be loaded
+        # Spieler kann dieses Flag über einen Tastendruck auf True setzen, um anzuzeigen, dass das nächste Rennen geladen werden soll
         self.should_load_next_race = False 
 
-        # Declares the mode-7 renderer.
-        # Initialized later when loading the race.
+        # Deklariert den Mode-7-Renderer.
+        # Wird später beim Laden des Rennens initialisiert.
         self.mode7 = None
 
-        # debug only: player chooses a machine
-        # outside debug mode, the player is using Purple Comet
+        # Nur für Debug: Spieler wählt eine Maschine
+        # Außerhalb des Debug-Modus verwendet der Spieler Purple Comet
         if DEBUG_CHOOSE_MACHINE:
             print("0: Purple Comet")
-            print("1: Faster Purple Comet")
-            print("2: Slower Purple Comet")
-            choice = int(input("Choose a machine: "))
+            print("1: Schnelleres Purple Comet")
+            print("2: Langsameres Purple Comet")
+            choice = int(input("Wähle eine Maschine: "))
             player_machine = MACHINES[choice]
         else:
-            player_machine = DEFAULT_MACHINE # default machine can be changed in settings.machine_settings
+            player_machine = DEFAULT_MACHINE # Standardmaschine kann in settings.machine_settings geändert werden
 
-        # Timestamp of the last frame rendered.
-        # Needed to make up for different framerates on different machines.
-        # If physics-related operations like accelerating, braking, restoring health, ...
-        # are not scaled with the time between this frame and the last frame,
-        # players with faster framerate accelerate faster etc.
-        # because more frame updates in computed in the same time.
+        # Zeitstempel des zuletzt gerenderten Frames.
+        # Wird benötigt, um unterschiedliche Framerate auf verschiedenen Maschinen auszugleichen.
+        # Wenn physikbezogene Operationen wie Beschleunigen, Bremsen, Energie wiederherstellen, ...
+        # nicht mit der Zeit zwischen diesem Frame und dem letzten Frame skaliert werden,
+        # beschleunigen Spieler mit höherer Framerate schneller usw.,
+        # weil mehr Frame-Updates in derselben Zeit berechnet werden.
         self.get_time()
         self.last_frame = self.time
 
-        # Creates a player instance and
-        # assigns the race track to the player.
-        # The player needs to know which race track they are driving on
-        # so they can check whether they would leave the track with their movement in the current frame
-        # or are hitting a track gimmick.
+        # Erstellt eine Spielerinstanz und
+        # weist die Rennstrecke dem Spieler zu.
+        # Der Spieler muss wissen, auf welcher Rennstrecke er fährt,
+        # damit er prüfen kann, ob er mit seiner Bewegung im aktuellen Frame die Strecke verlassen würde
+        # oder ein Strecken-Gimmick trifft.
         self.player = Player(
             machine = player_machine,
             current_race = next_race
         )
 
-        # need to add the player instance and the player shadow sprite to sprite group to be able to render it
-        # order matters since player needs to be "in front of" the shadow
+        # Spielerinstanz und Spieler-Schatten-Sprite zur Sprite-Gruppe hinzufügen, um es rendern zu können
+        # Reihenfolge ist wichtig, da der Spieler "vor" dem Schatten sein muss
         self.static_sprites.add(self.player.shadow_sprite)
         self.moving_sprites.add(self.player)
 
-        # Creates a camera instance
-        # that tracks the player.
+        # Erstellt eine Kamera-Instanz,
+        # die dem Spieler folgt.
         self.camera = Camera(
             self.player,
             CAM_DISTANCE
         )
 
-        # Creates sprites for the speed meter of the UI.
+        # Erstellt Sprites für den Geschwindigkeitsmesser der UI.
         self.speed_meter_sprites = [None, None, None, None]
         for i in range(0, 4):
-            self.speed_meter_sprites[i] = pygame.sprite.Sprite() # digits are numbered from right to left
-            self.speed_meter_sprites[i].image = NUMBER_IMAGES[0] # initially, all digits are 0
+            self.speed_meter_sprites[i] = pygame.sprite.Sprite() # Ziffern sind von rechts nach links nummeriert
+            self.speed_meter_sprites[i].image = NUMBER_IMAGES[0] # Anfangs sind alle Ziffern 0
             self.speed_meter_sprites[i].rect = self.speed_meter_sprites[i].image.get_rect()
             self.speed_meter_sprites[i].rect.topleft = [
-                RIGHT_MOST_SPEEDMETER_DIGIT_SCREEN_X_COORD - SPEED_METER_DIGIT_SPRITE_WIDTH * i, # offset sprites individually based on left-most one's x coord. 24px is sprite width
+                RIGHT_MOST_SPEEDMETER_DIGIT_SCREEN_X_COORD - SPEED_METER_DIGIT_SPRITE_WIDTH * i, # Sprites einzeln basierend auf der x-Koordinate des linkesten verschieben. 24px ist Sprite-Breite
                 SPEED_METER_DIGIT_SCREEN_Y_COORD
             ]
 
-            # add to sprite group for UI sprites (for rendering, done in App class)
+            # Zur Sprite-Gruppe für UI-Sprites hinzufügen (zum Rendern, erledigt in App-Klasse)
             self.ui_sprites.add(self.speed_meter_sprites[i])
 
-        # Creates sprites for the timer of the UI (analogously as those for speed meter).
+        # Erstellt Sprites für den Timer der UI (analog zu denen für den Geschwindigkeitsmesser).
         self.timer_sprites = [None, None, None, None, None, None, None]
         for i in range(0, 7):
             self.timer_sprites[i] = pygame.sprite.Sprite()
@@ -201,91 +202,91 @@ class App:
 
             self.ui_sprites.add(self.timer_sprites[i])
 
-        # Create instance of UI manager class
+        # Instanz der UI-Manager-Klasse erstellen
         self.ui = UI(
             player = self.player,
             speed_meter_sprites = self.speed_meter_sprites,
             timer_sprites = self.timer_sprites
         )
 
-        # Take initial timestamp that is 
-        # used for the timer that tracks the time since race start. 
-        # Need to used method get_time since self.time field is not initialized at this point.
+        # Initialen Zeitstempel nehmen, der
+        # für den Timer verwendet wird, der die Zeit seit Rennstart verfolgt.
+        # Muss die Methode get_time verwenden, da das Feld self.time zu diesem Zeitpunkt nicht initialisiert ist.
         self.race_start_timestamp = self.time
 
-        # sets status flag
+        # Status-Flag setzen
         self.in_racing_mode = True
 
-        # load the next race track
+        # Nächste Rennstrecke laden
         self.load_race(next_race)
 
     def update(self):
-        # computes time since last frame
+        # Berechnet die Zeit seit dem letzten Frame
         delta = self.time - self.last_frame
 
-        # timestamp of current frame start (!) for delta computation in next frame
+        # Zeitstempel des aktuellen Frame-Starts (!) für Delta-Berechnung im nächsten Frame
         self.last_frame = self.time
         
-        # For things only needed to be done during a race.
+        # Für Dinge, die nur während eines Rennens erledigt werden müssen.
         if self.in_racing_mode:
-            # updates the player based on time elapsed since game start
+            # Aktualisiert den Spieler basierend auf der seit Spielstart verstrichenen Zeit
             self.player.update(self.time, delta)
 
-            # updates camera position (which is done mainly based on player position)
+            # Aktualisiert die Kameraposition (wird hauptsächlich basierend auf der Spielerposition durchgeführt)
             self.camera.update()
 
-            # causes the Mode7-rendered environment to update
+            # Veranlasst die Mode7-gerenderte Umgebung zur Aktualisierung
             self.mode7.update(self.camera)
 
-            # Update timer on UI if player has not finished the current race yet
-            # and is not destroyed (Game Over).
+            # Timer in der UI aktualisieren, wenn der Spieler das aktuelle Rennen noch nicht beendet hat
+            # und nicht zerstört wurde (Game Over).
             if not self.player.finished and not self.player.destroyed:
                 seconds_since_race_start = self.time - self.race_start_timestamp
                 self.ui.update(
                     elapsed_milliseconds = seconds_since_race_start * 1000
                 )
 
-            # Checks whether player has finished the race.
-            # If so, a status flag is set in the player instance if not done already.
+            # Prüft, ob der Spieler das Rennen beendet hat.
+            # Wenn ja, wird ein Status-Flag in der Spielerinstanz gesetzt, falls noch nicht geschehen.
             if self.current_league.current_race().player_finished_race() and not self.player.finished:
                 self.player.finished = True
 
-            # load next race if player finished the current one and pushed the confirm button (which set the flag)
+            # Nächstes Rennen laden, wenn der Spieler das aktuelle beendet hat und die Bestätigungstaste gedrückt hat (was das Flag setzt)
             if self.should_load_next_race:
                 self.player.finished = False
                 self.load_race(self.current_league.next_race())
 
-            # Checks whether player has completed at least one lap
-            # and activates their boost power if so (and not activated yet).
+            # Prüft, ob der Spieler mindestens eine Runde absolviert hat
+            # und aktiviert seine Boost-Kraft, falls ja (und noch nicht aktiviert).
             if self.current_league.current_race().player_completed_first_lap() and not self.player.has_boost_power:
                 self.player.has_boost_power = True
 
-        # Updates clock.
-        # The passed framerate argument slows time in the game down artificially
-        # so that the game never runs with a higher framerate than the passed one.
+        # Uhr aktualisieren.
+        # Das übergebene Framerate-Argument verlangsamt die Zeit im Spiel künstlich,
+        # sodass das Spiel nie mit einer höheren Framerate als der übergebenen läuft.
         self.clock.tick(TARGET_FPS)
 
-        # caption of the window displays current frame rate
-        # (f'...' is a more readable + faster way to write format strings than with "%")
+        # Beschriftung des Fensters zeigt aktuelle Framerate an
+        # (f'...' ist eine lesbarere + schnellere Art, Formatstrings zu schreiben als mit "%")
         pygame.display.set_caption(f'{self.clock.get_fps(): 0.1f}')
 
-        # log output for debug
+        # Log-Ausgabe für Debug
         if SHOULD_DEBUG_LOG:
             self.debug_logs()
 
-    # (Re-)loads the passed race.
+    # (Neu-)Lädt das übergebene Rennen.
     def load_race(self, race):
-        # reset all progress data stored for this race
+        # Alle Fortschrittsdaten für dieses Rennen zurücksetzen
         race.reset_data()
 
-        # assign player the new race
+        # Spieler das neue Rennen zuweisen
         self.player.current_race = race
         
-        # reset player to starting position of (new) race track
+        # Spieler auf Startposition der (neuen) Rennstrecke zurücksetzen
         self.player.reinitialize()
 
-        # Replace renderer field with Mode-7 renderer for the new race track.
-        # Third parameter determines whether the renderer has a fog effect applied or not.
+        # Renderer-Feld durch Mode-7-Renderer für die neue Rennstrecke ersetzen.
+        # Dritter Parameter bestimmt, ob der Renderer einen Nebeleffekt anwendet oder nicht.
         self.mode7 = Mode7(
             app = self,
             floor_tex_path = race.floor_texture_path,
@@ -293,37 +294,37 @@ class App:
             is_foggy = race.is_foggy
         )
 
-        # reset timer
+        # Timer zurücksetzen
         self.race_start_timestamp = self.time
 
-        # restart music
+        # Musik neu starten
         mixer.music.load(race.music_track_path)
         mixer.music.play()
 
-        # reset flag
+        # Flag zurücksetzen
         self.should_load_next_race = False
 
-    # (Re-)initializes all sprite groups as empty groups.
-    # Can be used to tidy up when switching game modes.
+    # (Neu-)Initialisiert alle Sprite-Gruppen als leere Gruppen.
+    # Kann zum Aufräumen beim Wechseln zwischen Spielmodi verwendet werden.
     def initialize_sprite_groups(self):
         self.moving_sprites = pygame.sprite.Group()
         self.static_sprites = pygame.sprite.Group()
         self.ui_sprites = pygame.sprite.Group()
 
     def draw(self):
-        # draws the mode-7 environment
+        # Zeichnet die Mode-7-Umgebung
         self.mode7.draw()
 
-        # draws static sprites (e.g. player shadow) to screen
+        # Zeichnet statische Sprites (z.B. Spieler-Schatten) auf den Bildschirm
         self.static_sprites.draw(self.screen)
 
-        # draws moving sprites (e.g. player) to screen
+        # Zeichnet bewegliche Sprites (z.B. Spieler) auf den Bildschirm
         self.moving_sprites.draw(self.screen)
 
-        # draws UI sprites to screen
+        # Zeichnet UI-Sprites auf den Bildschirm
         self.ui_sprites.draw(self.screen)
 
-        # draws debug objects like energy bar
+        # Zeichnet Debug-Objekte wie Energieleiste
         if self.in_racing_mode:
             self.draw_racing_mode_debug_objects()
 
@@ -331,7 +332,7 @@ class App:
         if self.in_racing_mode and self.player.destroyed:
             self.draw_game_over_overlay()
 
-        # update the contents of the whole display
+        # Inhalt der gesamten Anzeige aktualisieren
         pygame.display.flip()
 
     def get_time(self):
@@ -339,66 +340,66 @@ class App:
 
     def check_event(self):
         for event in pygame.event.get():
-            # Terminate the process running the game
-            # if escape key is pressed or anything else caused the quit-game event
+            # Prozess beenden, der das Spiel ausführt,
+            # wenn Escape-Taste gedrückt wird oder etwas anderes das Beenden-Ereignis verursacht
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
-            # check for key presses in menu screens
+            # Prüft auf Tastendrücke in Menübildschirmen
             if event.type == pygame.KEYDOWN:
                 if event.key == STD_CONFIRM_KEY and self.player.finished:
                     self.should_load_next_race = True
-                # Game Over: Space zum Neustarten
+                # Game Over: Leertaste zum Neustarten
                 if event.key == STD_CONFIRM_KEY and self.player.destroyed:
                     self.load_race(self.current_league.current_race())
                 if event.key == STD_DEBUG_RESTART_KEY and DEBUG_RESTART_RACE_ON_R:
                     self.load_race(self.current_league.current_race())
 
-    # Main game loop, runs until termination of process.
+    # Hauptspielschleife, läuft bis zur Beendigung des Prozesses.
     def run(self):
         while True:
-            # handle events
+            # Ereignisse behandeln
             self.check_event()
 
-            # update field counting the milliseconds since game start
+            # Feld aktualisieren, das die Millisekunden seit Spielstart zählt
             self.get_time()
 
-            # update game state
+            # Spielzustand aktualisieren
             self.update()
 
-            # render frame
+            # Frame rendern
             self.draw()
 
-    # Logs various game state information to the console when key P is pressed. 
+    # Protokolliert verschiedene Spielzustandsinformationen in der Konsole, wenn Taste P gedrückt wird.
     def debug_logs(self):
         keys = pygame.key.get_pressed()
 
-        # log of player's position for debug purposes
+        # Protokoll der Spielerposition für Debug-Zwecke
         if keys[pygame.K_p]:
-            print("player position/angle: " + str(self.player.position[0]) + " " + str(self.player.position[1]) + ", " + str(self.player.angle))
+            print("Spielerposition/Winkel: " + str(self.player.position[0]) + " " + str(self.player.position[1]) + ", " + str(self.player.angle))
 
-        # log camera position for debug purposes
+        # Protokoll der Kameraposition für Debug-Zwecke
         # if keys[pygame.K_p]:
-        #     print("cam position/angle: " + str(self.camera.position[0]) + " " + str(self.camera.position[1]) + ", " + str(self.camera.angle))
+        #     print("Kameraposition/Winkel: " + str(self.camera.position[0]) + " " + str(self.camera.position[1]) + ", " + str(self.camera.angle))
 
-        # log whether player is on track
+        # Protokoll, ob Spieler auf der Strecke ist
         # if keys[pygame.K_p]:
         #     if self.race_track.is_on_track( CollisionRect(self.player.position, PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT) ):
-        #         print("player on track!")
+        #         print("Spieler auf Strecke!")
 
-        # log player speed
+        # Protokoll der Spielergeschwindigkeit
         # if keys[pygame.K_p]:
-        #     print("player speed:" + str(self.player.current_speed))
+        #     print("Spielergeschwindigkeit:" + str(self.player.current_speed))
 
     def draw_racing_mode_debug_objects(self):
-        # draw debug mode energy bar to screen
+        # Debug-Modus-Energieleiste auf den Bildschirm zeichnen
         pygame.draw.rect(
             self.screen,
             pygame.Color(160, 0, 0),
             pygame.Rect(
-                ENERGY_METER_LEFT_X, # left
-                ENERGY_METER_TOP_Y, # top
+                ENERGY_METER_LEFT_X, # links
+                ENERGY_METER_TOP_Y, # oben
                 (RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - ENERGY_METER_LEFT_X) * (self.player.current_energy / self.player.machine.max_energy), # pos x
                 ENERGY_METER_TOP_Y + (ENERGY_METER_HEIGHT / 2) # pos y
             )
@@ -420,7 +421,7 @@ class App:
         press_space_rect = PRESS_SPACE_IMAGE.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
         self.screen.blit(PRESS_SPACE_IMAGE, press_space_rect)
 
-# Execution of game loop if executed as a script.
+# Ausführung der Spielschleife, wenn als Skript ausgeführt.
 if __name__ == '__main__':
     app = App()
     app.run()

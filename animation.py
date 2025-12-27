@@ -1,85 +1,85 @@
-# This module builds an animation-graph-like API 
-# which can be used to play and transition between the multiple animations 
-# of an animated object in the game.
+# Dieses Modul baut eine Animations-Graph-ähnliche API auf,
+# die verwendet werden kann, um zwischen den mehreren Animationen
+# eines animierten Objekts im Spiel zu spielen und zu wechseln.
 
 
 
-# A class modelling a frame-based animation,
-# consisting of a list of frames as well as a playback speed for the animation.
+# Eine Klasse, die eine Frame-basierte Animation modelliert,
+# bestehend aus einer Liste von Frames sowie einer Wiedergabegeschwindigkeit für die Animation.
 #
-# Also keeps track of the frame of the animation that is currently displayed.
+# Verfolgt auch den Frame der Animation, der derzeit angezeigt wird.
 # 
-# To allow for varying animation speeds, 
-# the frame position is a floating point number (instead of an integer, as one might expect).
-# The current frame number is the integer portion of the frame_position variable,
-# while the fractional part of it quantifies the percentage of the duration of the current frame that has already elapsed
-# (shoutout to the YouTuber Clear Code for the idea with the fractional frame position to allow for varying animation playback speed).
+# Um unterschiedliche Animationsgeschwindigkeiten zu ermöglichen,
+# ist die Frame-Position eine Gleitkommazahl (anstatt einer Ganzzahl, wie man erwarten könnte).
+# Die aktuelle Framenummer ist der ganzzahlige Teil der frame_position-Variable,
+# während der Bruchteil davon den Prozentsatz der Dauer des aktuellen Frames quantifiziert, der bereits vergangen ist
+# (Dank an den YouTuber Clear Code für die Idee mit der gebrochenen Frame-Position, um unterschiedliche Animations-Wiedergabegeschwindigkeiten zu ermöglichen).
 class Animation:
     def __init__(self, frames, speed):
-        self.frames = frames # list of frames the animation consists of (contents have type pygame.Surface)
-        self.speed = speed # parameter used to control how fast the animation is played
-        self.frame_position = 0.0 # indicating the current position in the animation 
+        self.frames = frames # Liste der Frames, aus denen die Animation besteht (Inhalte haben Typ pygame.Surface)
+        self.speed = speed # Parameter, der verwendet wird, um zu steuern, wie schnell die Animation abgespielt wird
+        self.frame_position = 0.0 # zeigt die aktuelle Position in der Animation an
 
-    # Returns the length of the animation in frames.
+    # Gibt die Länge der Animation in Frames zurück.
     def length(self):
         return len(self.frames)
 
-    # Restarts the animation by jumping to first frame.
+    # Startet die Animation neu, indem zum ersten Frame gesprungen wird.
     def restart(self):
         self.frame_position = 0.0
 
-    # Advances this animation by an amount that is proportional to the passed delta.
-    # The delta is the time since the current frame of the game (not the animation!)
-    # and the last frame of the game.
-    # This is what makes the animation playback speed independent of the framerate
-    # of the hardware that currently executes the game.
+    # Bewegt diese Animation um einen Betrag vor, der proportional zum übergebenen Delta ist.
+    # Das Delta ist die Zeit seit dem aktuellen Frame des Spiels (nicht der Animation!)
+    # und dem letzten Frame des Spiels.
+    # Dies macht die Animations-Wiedergabegeschwindigkeit unabhängig von der Framerate
+    # der Hardware, die das Spiel derzeit ausführt.
     def advance(self, delta):
         self.frame_position += delta * self.speed
 
-        # in case of overflow, wrap around
+        # bei Überlauf umwickeln
         while self.frame_position > self.length():
             self.frame_position -= self.length()
 
-    # Returns the current frame of this animation.
+    # Gibt den aktuellen Frame dieser Animation zurück.
     def current_frame(self):
-        # integer type cast cuts the fractional part, effectively flooring the number
+        # Ganzzahl-Typumwandlung schneidet den Bruchteil ab, effektiv Abrunden der Zahl
         return self.frames[int(self.frame_position) % self.length()]
 
 
 
-# A class representing an animated object with its different animations.
-# Also keeps track of which animation is currently playing.
+# Eine Klasse, die ein animiertes Objekt mit seinen verschiedenen Animationen repräsentiert.
+# Verfolgt auch, welche Animation derzeit abgespielt wird.
 #
-# Animations are stored in a dictionary with strings as keys.
+# Animationen werden in einem Wörterbuch mit Strings als Schlüssel gespeichert.
 class AnimatedObject:
     def __init__(self, animations):
-        self.animations = animations # dictionary containing the animations
-        self.current_anim = None # current animation (object variable is created but cannot be initialized meaningfully)
+        self.animations = animations # Wörterbuch, das die Animationen enthält
+        self.current_anim = None # aktuelle Animation (Objektvariable wird erstellt, kann aber nicht sinnvoll initialisiert werden)
     
-    # Switches to the animation which is identified by the passed key (string).
+    # Wechselt zur Animation, die durch den übergebenen Schlüssel (String) identifiziert wird.
     def switch_animation(self, new_anim_key):
-        # actual switching
+        # tatsächliches Wechseln
         self.current_anim = self.animations[new_anim_key]
 
-        # restart animation to have a well-defined start/transition
+        # Animation neu starten, um einen wohldefinierten Start/Übergang zu haben
         self.current_anim.restart()
 
-    # Returns the current frame of the current animation.
+    # Gibt den aktuellen Frame der aktuellen Animation zurück.
     def current_frame(self):
         return self.current_anim.current_frame()
     
-    # Makes the current animation advance by an amount that is proportional to the passed delta.
+    # Bewegt die aktuelle Animation um einen Betrag vor, der proportional zum übergebenen Delta ist.
     # 
-    # Parameters:
-    # delta -  time between the last rendered game frame and the current one
+    # Parameter:
+    # delta - Zeit zwischen dem letzten gerenderten Spiel-Frame und dem aktuellen
     def advance_current_animation(self, delta):
         self.current_anim.advance(delta)
 
 
 
-# A class handling the animations for the machines that are controllable in the game.
+# Eine Klasse, die die Animationen für die Maschinen behandelt, die im Spiel steuerbar sind.
 class AnimatedMachine(AnimatedObject):
-    # Constructor that sets up animation automaton for machine. 
+    # Konstruktor, der den Animationsautomaten für die Maschine einrichtet.
     def __init__(self, driving_anim, idle_anim):
         super().__init__({ "idle": idle_anim, "driving": driving_anim })
 
