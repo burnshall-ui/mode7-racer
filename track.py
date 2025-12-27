@@ -1,9 +1,9 @@
-# A class modelling (the collision map for) a race track.
-# Objects of the class hold a name and several lists of collision rects
-# modelling the track surface, ramps, different types of gimmicks and obstacles, ...
+# Eine Klasse, die (die Kollisionskarte für) eine Rennstrecke modelliert.
+# Objekte der Klasse enthalten einen Namen und mehrere Listen von Kollisions-Rechtecken,
+# die die Streckenoberfläche, Rampen, verschiedene Arten von Features und Hindernissen modellieren, ...
 #
-# Parameters floor_texture_path and bg_texture_path are the paths to the textures for the track and planet 
-# as well as for the skybox-like background.
+# Parameter floor_texture_path und bg_texture_path sind die Pfade zu den Texturen für die Strecke und den Planeten
+# sowie für den skybox-ähnlichen Hintergrund.
 class Track:
     def __init__(self, name, track_surface_rects, key_checkpoint_rects, ramp_rects, finish_line_collider, 
             dash_plate_rects, recovery_rects, has_guard_rails):
@@ -21,120 +21,120 @@ class Track:
 
         self.recovery_zone_rects = recovery_rects
 
-        # Flag determining whether the track has solid borders or not
-        # (in the latter case, the player just falls off the track)
+        # Flag, das bestimmt, ob die Strecke feste Grenzen hat oder nicht
+        # (im letzteren Fall fällt der Spieler einfach von der Strecke)
         self.has_guard_rails = has_guard_rails
 
 
     
-    # ------------------ methods for collision detection ---------------------------
+    # ------------------ Methoden für Kollisionserkennung ---------------------------
 
 
 
-    # These methods check whether a passed rectangular collider 
-    # collides with something on the track.  
+    # Diese Methoden prüfen, ob ein übergebenes rechteckiges Kollisions-Rechteck
+    # mit etwas auf der Strecke kollidiert.
 
 
 
-    # Determines whether the passed rectangular collider is on the track surface or not.
+    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf der Streckenoberfläche ist oder nicht.
     # 
-    # Parameters:
+    # Parameter:
     # other (CollisionRect)
     def is_on_track(self, other):
         return collides_with_list(self.track_surface_rects, other)
 
-    # Determines whether the passed rectangular collider hits a dash plate on the track or not.
+    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck eine Dash-Platte auf der Strecke trifft oder nicht.
     #
-    # Parameters:
+    # Parameter:
     # other (CollisionRect)
     def is_on_dash_plate(self, other):
         return collides_with_list(self.dash_plate_rects, other)
 
-    # Determines whether the passed rectangular collider hits a recovery zone on the track.
+    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck eine Erholungszone auf der Strecke trifft.
     #
-    # Parameters:
+    # Parameter:
     # other (CollisionRect)
     def is_on_recovery_zone(self, other):
         return collides_with_list(self.recovery_zone_rects, other)
 
-    # Determines whether the passed rectangular collider is on a ramp or not.
+    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf einer Rampe ist oder nicht.
     #
-    # Parameters:
+    # Parameter:
     # other (CollisionRect)
     def is_on_ramp(self, other):
         return collides_with_list(self.ramp_rects, other)
 
-    # Determines whether the passed rectangular collider is on the finish line or not.
+    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf der Ziellinie ist oder nicht.
     #
-    # Parameters:
+    # Parameter:
     # other (CollisionRect)
     def is_on_finish_line(self, other):
         return self.finish_line_collider.overlap(other)
 
 
 
-    # --------------------- end of methods for collision detection ---------------------------
+    # --------------------- Ende der Methoden für Kollisionserkennung ---------------------------
 
 
 
-    # --------------------- methods for handling the key checkpoints on the track ------------------
+    # --------------------- Methoden zur Behandlung der Schlüssel-Checkpoints auf der Strecke ------------------
 
 
 
-    # Checks for each key checkpoint if the passed player collider
-    # is over one (or more) key checkpoint.
-    # If yes, these key checkpoints are marked as passed.
+    # Prüft für jeden Schlüssel-Checkpoint, ob das übergebene Spieler-Kollisions-Rechteck
+    # über einem (oder mehreren) Schlüssel-Checkpoint liegt.
+    # Falls ja, werden diese Schlüssel-Checkpoints als passiert markiert.
     def update_key_checkpoints(self, player_coll):
         for key_checkpoint in self.key_checkpoints:
             if key_checkpoint.collider.overlap(player_coll):
                 key_checkpoint.passed = True
 
-    # Returns true if and only if 
-    # the player has passed all key checkpoints on the track.
+    # Gibt genau dann True zurück,
+    # wenn der Spieler alle Schlüssel-Checkpoints auf der Strecke passiert hat.
     def all_key_checkpoints_passed(self):
         for key_checkpoint in self.key_checkpoints:
             if not key_checkpoint.passed:
                 return False
         return True
 
-    # Sets the passed-flags of all key checkpoints to false.
+    # Setzt die Passiert-Flags aller Schlüssel-Checkpoints auf False.
     def reset_key_checkpoints(self):
         for key_checkpoint in self.key_checkpoints:
             key_checkpoint.passed = False
 
 
 
-    # ----------------- end of the methods for handling the key checkpoints on the track
+    # ----------------- Ende der Methoden zur Behandlung der Schlüssel-Checkpoints auf der Strecke
 
 
 
-    # Capsulates the check whether the guard rails on this track 
-    # are active in a specific frame.
-    # Note that this might not only depend on whether the track has guard rails
-    # but also traps on the track might be able to temporarily disable the track's guard rails. 
+    # Kapselt die Prüfung, ob die Leitplanken auf dieser Strecke
+    # in einem bestimmten Frame aktiv sind.
+    # Beachte, dass dies möglicherweise nicht nur davon abhängt, ob die Strecke Leitplanken hat,
+    # sondern auch Fallen auf der Strecke könnten die Leitplanken der Strecke vorübergehend deaktivieren können.
     def guard_rails_active(self):
         return self.has_guard_rails
 
 
 
-# A key checkpoint for the lap counting system.
-# Consists of a CollisionRect and a passed-flag.
+# Ein Schlüssel-Checkpoint für das Rundenzählungssystem.
+# Besteht aus einem CollisionRect und einem Passiert-Flag.
 #
-# If the player passes all key checkpoints and then the finish line,
-# this counts as a completed lap.
-# In either case, the list of passed key checkpoints is reset.
+# Wenn der Spieler alle Schlüssel-Checkpoints passiert und dann die Ziellinie,
+# zählt dies als abgeschlossene Runde.
+# In beiden Fällen wird die Liste der passierten Schlüssel-Checkpoints zurückgesetzt.
 class KeyCheckpoint:
-    # Creates a new key checkpoint instance with the passed collision rect.
-    # Initially, the checkpoint is marked as not passed by the player.
+    # Erstellt eine neue Schlüssel-Checkpoint-Instanz mit dem übergebenen Kollisions-Rechteck.
+    # Anfangs ist der Checkpoint als nicht passiert vom Spieler markiert.
     def __init__(self, collider):
         self.collider = collider
         self.passed = False
 
-# Checks whether the passed rectangular collider
-# collides with any of the colliders in the passed list.
+# Prüft, ob das übergebene rechteckige Kollisions-Rechteck
+# mit einem der Kollisions-Rechtecke in der übergebenen Liste kollidiert.
 #
-# Parameters:
-# list      - list of CollisionRect
+# Parameter:
+# list      - Liste von CollisionRect
 # other     - CollisionRect
 def collides_with_list(coll_list, other):
     for rect_coll in coll_list:

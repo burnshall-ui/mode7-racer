@@ -1,22 +1,22 @@
-# Module for everything related to collision.
-# Note that we cannot the pygame built-in collision system
-# since the shapes are not within screen space but within some custom logical 3D-space
-# that pygame is not aware of.
+# Modul für alles, was mit Kollisionen zu tun hat.
+# Beachte, dass wir das eingebaute pygame-Kollisionssystem nicht verwenden können,
+# da die Formen nicht im Bildschirmraum, sondern in einem benutzerdefinierten logischen 3D-Raum sind,
+# von dem pygame nichts weiß.
 
-# A class modelling a rectangular collider around a game object.
-# A numpy list is used to model the colliders position.
+# Eine Klasse, die einen rechteckigen Kollisionskörper um ein Spielobjekt modelliert.
+# Eine numpy-Liste wird verwendet, um die Position des Kollisionskörpers zu modellieren.
 class CollisionRect:
     def __init__(self, pos, w, h):
         self.position = pos
         self.width = w
         self.height = h
 
-    # Determines whether this rectangle collider overlaps with the passed other one.
+    # Bestimmt, ob dieser rechteckige Kollisionskörper mit dem übergebenen anderen überlappt.
     def overlap(self, other):
         return (
-            # x position close enough?
+            # x-Position nah genug?
             abs(self.position[0] - other.position[0]) <= self.width / 2 + other.width / 2 and
-            # y positions close enough?
+            # y-Positionen nah genug?
             abs(self.position[1] - other.position[1]) <= self.height / 2 + other.height / 2
         )
 

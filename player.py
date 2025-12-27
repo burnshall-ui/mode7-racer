@@ -1,10 +1,10 @@
 import numpy
 import pygame
 
-from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # debug config
-from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # button mapping config
-from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # rendering config
-from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # player collider config
+from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # Debug-Konfiguration
+from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # Tastenbelegungs-Konfiguration
+from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # Render-Konfiguration
+from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # Spieler-Kollisions-Rechteck-Konfiguration
 from settings.machine_settings import HEIGHT_DURING_JUMP, HIT_COST_SPEED_FACTOR, MIN_BOUNCE_BACK_FORCE
 from settings.machine_settings import OBSTACLE_HIT_SPEED_RETENTION 
 
@@ -13,46 +13,46 @@ from collision import CollisionRect
 from animation import AnimatedMachine
 
 class Player(pygame.sprite.Sprite, AnimatedMachine):
-    # Constructor.
-    # machine: the machine that is controlled by this player
-    # current_race: the race that the player is currently playing
+    # Konstruktor.
+    # machine: die Maschine, die von diesem Spieler gesteuert wird
+    # current_race: das Rennen, das der Spieler gerade fährt
     def __init__(self, machine, current_race):
-        # race data reference
-        # in order to be able to react to environment
-        # and initialize the player position
+        # Referenz auf Renn-Daten
+        # um auf die Umgebung reagieren zu können
+        # und die Spieler-Position initialisieren zu können
         self.current_race = current_race
         
-        # initialize position and rotation (according to the currently played race)
+        # Position und Rotation initialisieren (gemäß dem aktuell gefahrenen Rennen)
         self.reinitialize_position_angle()
         
-        # physics variables
-        self.machine = machine # holds all relevant data on physical properties of the player machine
-        self.current_speed = 0 # how fast the player moves in the current frame
-        self.centri = 0 # how strong the centrifugal force applied in the current frame is
+        # Physik-Variablen
+        self.machine = machine # enthält alle relevanten Daten zu physikalischen Eigenschaften der Spieler-Maschine
+        self.current_speed = 0 # wie schnell sich der Spieler im aktuellen Frame bewegt
+        self.centri = 0 # wie stark die Zentrifugalkraft ist, die im aktuellen Frame angewendet wird
 
-        # current amount of energy that the machine has left
+        # Aktuelle Menge an Energie, die der Maschine noch bleibt
         self.current_energy = self.machine.max_energy
 
-        # initialize animation variables by calling respective super class constructor
+        # Animations-Variablen initialisieren durch Aufruf des entsprechenden Super-Klassen-Konstruktors
         AnimatedMachine.__init__(self, 
             idle_anim = self.machine.idle_anim,
             driving_anim = self.machine.driving_anim
         )
         
-        # switch animation to initial one
+        # Animation auf die initiale umschalten
         self.switch_animation("driving")
 
-        # Rendering variables (for machine without shadow).
-        # The x coordinate of the player is always fixed,
-        # the y coordinate usually fixed as well 
-        # changed according to some configured quadratic function during a jump. 
-        pygame.sprite.Sprite.__init__(self) # calling constructor of pygame's Sprite class (responsible for rendering)
+        # Rendering-Variablen (für Maschine ohne Schatten).
+        # Die x-Koordinate des Spielers ist immer fest,
+        # die y-Koordinate normalerweise auch,
+        # wird während eines Sprungs gemäß einer konfigurierten quadratischen Funktion geändert.
+        pygame.sprite.Sprite.__init__(self) # Konstruktor der pygame Sprite-Klasse aufrufen (verantwortlich für Rendering)
         self.image = self.current_frame()
         self.rect = self.image.get_rect()
         self.rect.topleft = [NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y]
 
-        # Create a new sprite object for the machine shadow
-        # which remains fixed all the time.
+        # Erstellt ein neues Sprite-Objekt für den Maschinen-Schatten,
+        # der die ganze Zeit über fixiert bleibt.
         self.shadow_sprite = pygame.sprite.Sprite()
         shadow_img = pygame.image.load(self.machine.shadow_image_path)
         # Schatten skalieren entsprechend RENDER_SCALE
@@ -62,72 +62,72 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             shadow_img = pygame.transform.scale(shadow_img, (new_width, new_height))
         self.shadow_sprite.image = shadow_img
         self.shadow_sprite.rect = self.shadow_sprite.image.get_rect()
-        # shadow sprite is created in a way that it is fine if player + shadow are at same screen coordinates
+        # Schatten-Sprite wird so erstellt, dass es in Ordnung ist, wenn Spieler + Schatten an denselben Bildschirmkoordinaten sind
         self.shadow_sprite.rect.topleft = [NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y]
 
-        # player status flags/variables
+        # Spieler Status-Flags/Variablen
         self.steering_left = False
         self.steering_right = False
         self.jumping = False
-        self.jumped_off_timestamp = None # timestamp when the player last jumped off a ramp
-        # When jumping: this is the duration of the jump from start to landing.
-        # Needed to compute the player y coordinate on screen while jumping.
+        self.jumped_off_timestamp = None # Zeitstempel, wann der Spieler zuletzt von einer Rampe gesprungen ist
+        # Beim Springen: Dies ist die Dauer des Sprungs vom Start bis zur Landung.
+        # Benötigt, um die y-Koordinate des Spielers auf dem Bildschirm während des Sprungs zu berechnen.
         self.current_jump_duration = 0
-        self.finished = False # whether the player has finished the current race
-        self.destroyed = False # whether the player machine has been destroyed due to crashing out of bounds or no energy left
+        self.finished = False # ob der Spieler das aktuelle Rennen beendet hat
+        self.destroyed = False # ob die Spieler-Maschine zerstört wurde aufgrund eines Absturzes außerhalb der Grenzen oder keiner Energie mehr
         self.boosted = False
-        self.last_boost_started_timestamp = None # timestamp of when the player last started a boost
-        self.has_boost_power = False # whether the player is allowed to use their booster (set to False during the first lap, flips to True after completing first lap)
+        self.last_boost_started_timestamp = None # Zeitstempel, wann der Spieler zuletzt einen Boost gestartet hat
+        self.has_boost_power = False # ob der Spieler seinen Booster verwenden darf (wird auf False gesetzt während der ersten Runde, wechselt zu True nach Abschluss der ersten Runde)
 
-    # Updates player data and position.
+    # Aktualisiert Spielerdaten und Position.
     # 
-    # Parameters:
-    # time: number of frames since the game started
+    # Parameter:
+    # time: Anzahl der Frames seit Spielstart
     def update(self, time, delta):
-        # move player according to steering inputs and current speed
+        # Spieler entsprechend Steuereingaben und aktueller Geschwindigkeit bewegen
         if IN_DEV_MODE:
             self.dev_mode_movement()
         elif not self.destroyed:
             self.racing_mode_movement(time, delta)
 
-        # Store the current rectangular collider of the player
-        # for use in several environment checks and updates.
+        # Aktuelles rechteckiges Kollisions-Rechteck des Spielers speichern
+        # für die Verwendung in mehreren Umgebungsprüfungen und Aktualisierungen.
         current_collision_rect = CollisionRect(
             pos = self.position,
             w = PLAYER_COLLISION_RECT_WIDTH,
             h = PLAYER_COLLISION_RECT_HEIGHT
         )
 
-        # Update the lap count.
-        # To do so, the track object needs the current position of the player.
+        # Rundenzählung aktualisieren.
+        # Dafür benötigt das Strecken-Objekt die aktuelle Position des Spielers.
         self.current_race.update_lap_count(current_collision_rect)
 
-        # Make player boost if on dash plate.
-        # Jumping over a dash plate of course does not lead to a boost.
+        # Spieler boosten lassen, wenn auf Dash-Platte.
+        # Über eine Dash-Platte springen führt natürlich nicht zu einem Boost.
         if self.current_race.is_on_dash_plate(current_collision_rect) and not self.jumping and not self.boosted:
             self.boosted = True
-            self.last_boost_started_timestamp = time # timestamp for determining when the boost should end
+            self.last_boost_started_timestamp = time # Zeitstempel zur Bestimmung, wann der Boost enden soll
         if self.boosted:
             self.continue_boost(time)
 
-        # Make player jump if on ramp.
-        # Nur springen wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
+        # Spieler springen lassen, wenn auf Rampe.
+        # Nur springen, wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
         MIN_JUMP_SPEED = 2.0  # Mindestgeschwindigkeit für Sprung
         if self.current_race.is_on_ramp(current_collision_rect) and not self.jumping and self.current_speed >= MIN_JUMP_SPEED:
-            self.jumping = True # set status flag
-            self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # compute duration of jump based on speed
-            self.jumped_off_timestamp = time # timestamp for computing height in later frames
+            self.jumping = True # Status-Flag setzen
+            self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # Dauer des Sprungs basierend auf Geschwindigkeit berechnen
+            self.jumped_off_timestamp = time # Zeitstempel zur Berechnung der Höhe in späteren Frames
         if self.jumping:
             self.continue_jump(time)
 
-        # Make player recover energy if in recovery zone.
-        # Jumping over a recovery zone of course does not count.
+        # Spieler Energie wiederherstellen lassen, wenn in Erholungszone.
+        # Über eine Erholungszone springen zählt natürlich nicht.
         if self.current_race.is_on_recovery_zone(current_collision_rect) and not self.jumping:
             self.current_energy += self.machine.recover_speed * delta
             if self.current_energy > self.machine.max_energy:
                 self.current_energy = self.machine.max_energy
 
-        # advance player's current animation and update the image of the player sprite
+        # Aktuelle Animation des Spielers fortführen und das Bild des Spieler-Sprites aktualisieren
         self.advance_current_animation(delta)
         self.image = self.current_frame()
 

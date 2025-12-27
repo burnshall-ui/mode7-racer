@@ -1,22 +1,22 @@
-# Settings for the race tracks and their collision maps.
+# Einstellungen für die Rennstrecken und ihre Kollisionskarten.
 
-import numpy # numpy arrays used for positions of rectangle colliders
+import numpy # numpy Arrays werden für Positionen von Rechteck-Kollisionskörpern verwendet
 from collision import CollisionRect
 from track import Track, KeyCheckpoint 
 
-# race configuration
-STD_REQUIRED_LAPS = 3 # number of laps normally required to finish a race
+# Rennen-Konfiguration
+STD_REQUIRED_LAPS = 3 # Anzahl der Runden, die normalerweise benötigt werden, um ein Rennen abzuschließen
 
-# obstacle sizes for "prefab" obstacles
+# Hindernisgrößen für "Prefab"-Hindernisse
 DASH_PLATE_HEIGHT = 1.5
 DASH_PLATE_WIDTH = 1.5
 
-# A class that capsulates the creation of the objects representing the race tracks in memory
-# to avoid crowding the main module.
+# Eine Klasse, die die Erstellung der Objekte, die die Rennstrecken im Speicher repräsentieren, kapselt,
+# um zu vermeiden, dass das Hauptmodul überfüllt wird.
 #
-# Holds several static methods to create the different tracks.
+# Enthält mehrere statische Methoden, um die verschiedenen Strecken zu erstellen.
 class TrackCreator:
-    # Creates the collision shape for the track whose sprite is named "track_2023.png"
+    # Erstellt die Kollisionsform für die Strecke, deren Sprite "track_2023.png" heißt
     def create_track_2023():
         # creating colliders for track
 

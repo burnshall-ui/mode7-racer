@@ -1,30 +1,30 @@
-import numpy # for numpy array type for cam position and sin, cos
+import numpy # für numpy Array-Typ für Kamera-Position und sin, cos
 
 from settings.renderer_settings import CAM_DISTANCE
 
 class Camera:
     def __init__(self, player, cam_dist = CAM_DISTANCE):
-        # Declare position and angle variables of the camera.
-        # Initialized with dummy values
-        # which are overwritten in first frame of the game.
+        # Deklariert Positions- und Winkel-Variablen der Kamera.
+        # Mit Dummy-Werten initialisiert,
+        # die im ersten Frame des Spiels überschrieben werden.
         self.position = numpy.array([0.0, 0.0])
         self.angle = 0
 
-        self.tracked_player = player # the player that this camera should track
-        self.camera_distance = cam_dist # distance the camera should keep to the player
+        self.tracked_player = player # der Spieler, dem diese Kamera folgen soll
+        self.camera_distance = cam_dist # Abstand, den die Kamera zum Spieler halten soll
 
-    # Camera should always be behind the player,
-    # at a certain distance.
+    # Die Kamera sollte immer hinter dem Spieler sein,
+    # in einem bestimmten Abstand.
     def update(self):
-        # The offset can be computed the same way that the player's position
-        # is updated when the player moves backwards.
+        # Der Offset kann auf dieselbe Weise berechnet werden, wie die Position des Spielers
+        # aktualisiert wird, wenn der Spieler sich rückwärts bewegt.
         offset = numpy.array([
             - self.camera_distance * numpy.cos(self.tracked_player.angle), 
             - self.camera_distance * numpy.sin(self.tracked_player.angle)
         ])
 
-        # for simplicity cam pos = player pos for now
+        # der Einfachheit halber ist Kamera-Pos = Spieler-Pos für jetzt
         self.position = self.tracked_player.position + offset
 
-        # camera always looks in the same direction as the player
+        # Kamera schaut immer in dieselbe Richtung wie der Spieler
         self.angle = self.tracked_player.angle
