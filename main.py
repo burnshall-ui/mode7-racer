@@ -9,6 +9,7 @@ from settings.machine_settings import *
 from settings.renderer_settings import *
 from settings.track_settings import *
 from settings.ui_settings import *
+from settings.ui_settings import GAME_OVER_OVERLAY_ALPHA, GAME_OVER_IMAGE, PRESS_SPACE_IMAGE
 from settings.key_settings import STD_CONFIRM_KEY, STD_DEBUG_RESTART_KEY
 from settings.league_settings import *
 from settings.music_settings import *
@@ -225,7 +226,7 @@ class App:
         # timestamp of current frame start (!) for delta computation in next frame
         self.last_frame = self.time
         
-        # For things only needed to be done during a race. 
+        # For things only needed to be done during a race.
         if self.in_racing_mode:
             # updates the player based on time elapsed since game start
             self.player.update(self.time, delta)
@@ -236,8 +237,9 @@ class App:
             # causes the Mode7-rendered environment to update
             self.mode7.update(self.camera)
 
-            # Update timer on UI if player has not finished the current race yet.
-            if not self.player.finished:
+            # Update timer on UI if player has not finished the current race yet
+            # and is not destroyed (Game Over).
+            if not self.player.finished and not self.player.destroyed:
                 seconds_since_race_start = self.time - self.race_start_timestamp
                 self.ui.update(
                     elapsed_milliseconds = seconds_since_race_start * 1000
@@ -325,6 +327,10 @@ class App:
         if self.in_racing_mode:
             self.draw_racing_mode_debug_objects()
 
+        # Game Over Overlay zeichnen wenn Spieler zerstört wurde
+        if self.in_racing_mode and self.player.destroyed:
+            self.draw_game_over_overlay()
+
         # update the contents of the whole display
         pygame.display.flip()
 
@@ -333,7 +339,7 @@ class App:
 
     def check_event(self):
         for event in pygame.event.get():
-            # Terminate the process running the game 
+            # Terminate the process running the game
             # if escape key is pressed or anything else caused the quit-game event
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -342,7 +348,10 @@ class App:
             # check for key presses in menu screens
             if event.type == pygame.KEYDOWN:
                 if event.key == STD_CONFIRM_KEY and self.player.finished:
-                    self.should_load_next_race = True 
+                    self.should_load_next_race = True
+                # Game Over: Space zum Neustarten
+                if event.key == STD_CONFIRM_KEY and self.player.destroyed:
+                    self.load_race(self.current_league.current_race())
                 if event.key == STD_DEBUG_RESTART_KEY and DEBUG_RESTART_RACE_ON_R:
                     self.load_race(self.current_league.current_race())
 
@@ -385,8 +394,8 @@ class App:
     def draw_racing_mode_debug_objects(self):
         # draw debug mode energy bar to screen
         pygame.draw.rect(
-            self.screen, 
-            pygame.Color(160, 0, 0), 
+            self.screen,
+            pygame.Color(160, 0, 0),
             pygame.Rect(
                 ENERGY_METER_LEFT_X, # left
                 ENERGY_METER_TOP_Y, # top
@@ -394,6 +403,22 @@ class App:
                 ENERGY_METER_TOP_Y + (ENERGY_METER_HEIGHT / 2) # pos y
             )
         )
+
+    # Zeichnet das Game Over Overlay wenn der Spieler zerstört wurde (SNES-Style)
+    def draw_game_over_overlay(self):
+        # Halbtransparentes dunkles Overlay
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.fill((0, 0, 0))
+        overlay.set_alpha(GAME_OVER_OVERLAY_ALPHA)
+        self.screen.blit(overlay, (0, 0))
+
+        # "GAME OVER" Sprite zentriert
+        game_over_rect = GAME_OVER_IMAGE.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
+        self.screen.blit(GAME_OVER_IMAGE, game_over_rect)
+
+        # "PRESS SPACE" Sprite zentriert darunter
+        press_space_rect = PRESS_SPACE_IMAGE.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
+        self.screen.blit(PRESS_SPACE_IMAGE, press_space_rect)
 
 # Execution of game loop if executed as a script.
 if __name__ == '__main__':

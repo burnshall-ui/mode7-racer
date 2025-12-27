@@ -3,17 +3,32 @@
 import pygame
 from machine import Machine
 from animation import Animation
+from settings.renderer_settings import RENDER_SCALE
+
+# Hilfsfunktion zum Laden und Skalieren von Sprites
+def load_scaled_image(path):
+    """Lädt ein Bild und skaliert es entsprechend RENDER_SCALE."""
+    img = pygame.image.load(path)
+    if RENDER_SCALE != 1.0:
+        new_width = int(img.get_width() * RENDER_SCALE)
+        new_height = int(img.get_height() * RENDER_SCALE)
+        img = pygame.transform.scale(img, (new_width, new_height))
+    return img
 
 # physics variables of the player machine
 PLAYER_COLLISION_RECT_WIDTH = 1 # width of the player collider (the same for all machines)
 PLAYER_COLLISION_RECT_HEIGHT = 1 # height of the player collider
-JUMP_HEIGHT = 100 # maximum height the player gains throughout a jump (compared to its standard y coordinate)
+BASE_JUMP_HEIGHT = 100 # maximum height the player gains throughout a jump (Basis-Wert)
+JUMP_HEIGHT = int(BASE_JUMP_HEIGHT * RENDER_SCALE) # skalierte Sprunghöhe
 OBSTACLE_HIT_SPEED_RETENTION = 0.5 # percentage of its speed the player machine retains when hitting an obstacle
 MIN_BOUNCE_BACK_FORCE = 0.005 # minimal force applied in opposite direction when the player hits a wall (to prevent player getting stuck just outside the track boundaries)
 
+# Geschwindigkeits-Skalierung (1.0 = Original, 0.8 = 80%)
+SPEED_SCALE = 0.8
+
 # reference values for machine stats
-PURPLE_COMET_ACCELERATION = 5000 / 750
-PURPLE_COMET_MAX_SPEED = 25
+PURPLE_COMET_ACCELERATION = (5000 / 750) * SPEED_SCALE
+PURPLE_COMET_MAX_SPEED = 25 * SPEED_SCALE
 
 # maximum energy that a machine usually has
 STD_MAX_ENERGY = 100
@@ -47,17 +62,17 @@ PURPLE_COMET_SHADOW_IMAGE_PATH = PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machi
 
 PURPLE_COMET_DRIVING_ANIMATION = Animation(
     frames = [
-        pygame.image.load(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0001.png"),
-        pygame.image.load(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0002.png"),
-        pygame.image.load(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0003.png"),
-        pygame.image.load(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0004.png")
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0001.png"),
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0002.png"),
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0003.png"),
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0004.png")
     ],
     speed = DRIVING_ANIM_SPEED
 )
 
 PURPLE_COMET_IDLE_ANIMATION = Animation(
     frames = [
-        pygame.image.load(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0000.png")
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0000.png")
     ],
     speed = IDLE_ANIM_SPEED
 )

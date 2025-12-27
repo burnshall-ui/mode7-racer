@@ -3,7 +3,7 @@ import pygame
 
 from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # debug config
 from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # button mapping config
-from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y # rendering config
+from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # rendering config
 from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # player collider config
 from settings.machine_settings import HEIGHT_DURING_JUMP, HIT_COST_SPEED_FACTOR, MIN_BOUNCE_BACK_FORCE
 from settings.machine_settings import OBSTACLE_HIT_SPEED_RETENTION 
@@ -54,7 +54,13 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Create a new sprite object for the machine shadow
         # which remains fixed all the time.
         self.shadow_sprite = pygame.sprite.Sprite()
-        self.shadow_sprite.image = pygame.image.load(self.machine.shadow_image_path)
+        shadow_img = pygame.image.load(self.machine.shadow_image_path)
+        # Schatten skalieren entsprechend RENDER_SCALE
+        if RENDER_SCALE != 1.0:
+            new_width = int(shadow_img.get_width() * RENDER_SCALE)
+            new_height = int(shadow_img.get_height() * RENDER_SCALE)
+            shadow_img = pygame.transform.scale(shadow_img, (new_width, new_height))
+        self.shadow_sprite.image = shadow_img
         self.shadow_sprite.rect = self.shadow_sprite.image.get_rect()
         # shadow sprite is created in a way that it is fine if player + shadow are at same screen coordinates
         self.shadow_sprite.rect.topleft = [NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y]
@@ -105,7 +111,9 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             self.continue_boost(time)
 
         # Make player jump if on ramp.
-        if self.current_race.is_on_ramp(current_collision_rect) and not self.jumping:
+        # Nur springen wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
+        MIN_JUMP_SPEED = 2.0  # Mindestgeschwindigkeit für Sprung
+        if self.current_race.is_on_ramp(current_collision_rect) and not self.jumping and self.current_speed >= MIN_JUMP_SPEED:
             self.jumping = True # set status flag
             self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # compute duration of jump based on speed
             self.jumped_off_timestamp = time # timestamp for computing height in later frames
@@ -341,13 +349,13 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             if self.current_race.guard_rails_active():
                 # Player bounces back since their move speed is flipped.
                 # Player does not retain all of its speed.
-                # There is a minimal force that is always applied 
+                # There is a minimal force that is always applied
                 # to prevent the player getting stuck outside the track boundaries.
                 self.current_speed = -(self.current_speed * OBSTACLE_HIT_SPEED_RETENTION + MIN_BOUNCE_BACK_FORCE)
 
                 # Player loses energy.
                 self.lose_energy(self.current_speed)
-                
+
                 # player machine is destroyed if it has taken more damage than it can sustain
                 if self.current_energy < 0:
                     self.destroy()
@@ -356,7 +364,7 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             else:
                 self.destroy()
 
-        
+
 
         # ----------------- application of centrifugal forces
 

@@ -57,6 +57,7 @@ class Race:
                 # If player has completed enough laps, initialize the finish sequence.
                 self.player_completed_laps += 1
                 print(str(self.player_completed_laps) + " laps completed!")
+
                 if self.player_finished_race():
                     print("race finished!")
             self.race_track.reset_key_checkpoints()
