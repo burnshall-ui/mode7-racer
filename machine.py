@@ -1,6 +1,6 @@
 # Klasse, die eine Maschine repräsentiert,
-# einschließlich aller Physik-Engine-bezogenen Daten (Beschleunigungskraft, Höchstgeschwindigkeit, ...)
-# und Grafik
+# einschließlich aller physik-Engine-bezogenen Daten (Beschleunigungskraft, Maximalgeschwindigkeit, ...)
+# und Grafiken
 class Machine:
     def __init__(self, max_speed, boosted_max_speed, acceleration, boosted_acceleration, brake, speed_loss, 
             boosted_speed_loss, max_centri, centri_increase, centri_decrease, jump_duration_multiplier, boost_duration, max_energy, 
@@ -15,7 +15,7 @@ class Machine:
         self.boosted_max_speed = boosted_max_speed # Höchstgeschwindigkeit, wenn ein Boost aktiv ist
 
         # Beschleunigungskraft:
-        # Menge an Geschwindigkeit, die pro Frame hinzugefügt wird, in dem der Spieler den Beschleuniger gedrückt hält
+        # Menge an Geschwindigkeit, die pro Frame hinzugefügt wird, in dem der Spieler den Beschleuniger gedrückt hat
         self.acceleration = acceleration
         self.boosted_acceleration = boosted_acceleration # Beschleunigungskraft ist unterschiedlich (normalerweise stärker), wenn der Booster verwendet wird
 
@@ -24,8 +24,8 @@ class Machine:
         self.brake = brake
 
         # Geschwindigkeitsverlust:
-        # beschreibt, wie gut die Maschine Geschwindigkeit behält, wenn der Spieler nicht beschleunigt
-        # genauer gesagt, dies ist die Menge an Geschwindigkeit, die in jedem Frame subtrahiert wird,
+        # Beschreibt, wie gut die Maschine ihre Geschwindigkeit behält, wenn der Spieler nicht beschleunigt
+        # Genauer gesagt ist dies die Menge an Geschwindigkeit, die in jedem Frame subtrahiert wird,
         # in dem der Spieler nicht beschleunigt
         # (aber auch nicht die Bremsen drückt)
         self.speed_loss = speed_loss
@@ -35,16 +35,16 @@ class Machine:
 
         # Zentrifugalkraft:
         # Bestimmt, wie stark die Maschine nach außen gedrückt wird, wenn gelenkt wird.
-        # Genauer gesagt quantifizieren die Zentrifugalkraft-Variablen den Prozentsatz der Höchstgeschwindigkeit der Maschine,
+        # Genauer gesagt quantifizieren die Zentrifugalkraft-Variablen den Prozentsatz der maximalen Geschwindigkeit der Maschine,
         # der als Zentrifugalkraft angewendet wird.
 
-        # wie viel die Zentrifugalkraft in jedem Frame zunimmt, in dem die Maschine lenkt
+        # wie sehr die Zentrifugalkraft in jedem Frame zunimmt, in dem die Maschine lenkt
         self.centri_increase = centri_increase 
 
-        # die Obergrenze für die maximale Zentrifugalkraft, die in einem einzigen Frame angewendet werden soll
+        # das Limit für die maximale Zentrifugalkraft, die in einem einzelnen Frame angewendet werden soll
         self.max_centri = max_centri
 
-        # wie viel die Zentrifugalkraft in jedem Frame abnimmt, in dem die Maschine nicht lenkt
+        # wie sehr die Zentrifugalkraft in jedem Frame abnimmt, in dem die Maschine nicht lenkt
         self.centri_decrease = centri_decrease
 
         # ---------------------- Ende der Zentrifugalkraft-Variablen -----------------------------------
@@ -62,10 +62,10 @@ class Machine:
         # wie viel Energie die Maschine verliert, wenn der Booster verwendet wird
         self.boost_cost = boost_cost
 
-        # verwendet, um die Energiemenge zu bestimmen, die die Maschine beim Aufprall auf Hindernisse verliert
+        # wird verwendet, um die Energiemenge zu bestimmen, die die Maschine verliert, wenn sie Hindernisse trifft
         self.hit_cost = hit_cost
 
-        # wie schnell die Maschine Energie wiederherstellt, wenn sie sich in einer Erholungszone befindet
+        # wie schnell die Maschine Energie wiederherstellt, wenn sie in einer Wiederherstellungszone ist
         self.recover_speed = recover_speed
 
         # wie schnell der Spieler rotieren kann, wenn er lenkt
@@ -84,7 +84,7 @@ class Machine:
         # Bilder der Animation, die abgespielt wird, wenn die Maschine im Leerlauf ist
         self.idle_anim = idle_anim
 
-        # Bilder der Animation, die abgespielt wird, wenn der Beschleuniger der Maschine aktiviert ist
+        # Bilder der Animation, die abgespielt wird, wenn der Beschleuniger der Maschine gedrückt ist
         self.driving_anim = driving_anim
 
         # Bild des Schattens, den die Maschine auf die Strecke wirft

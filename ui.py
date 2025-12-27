@@ -1,10 +1,10 @@
 from settings.ui_settings import SPEED_DISPLAY_MULTIPLIER, NUMBER_IMAGES
 
-# Verwaltet Aktualisierungen der UI in jedem Frame.
-# Das Zeichnen der UI wird im Hauptmodul (App-Klasse) durchgeführt.
+# Behandelt Aktualisierungen der UI in jedem Frame.
+# Das Zeichnen der UI erfolgt im Hauptmodul (App-Klasse).
 class UI:
     # Parameter:
-    # player: Spieler-Instanz, die mit dieser UI-Instanz verfolgt werden soll
+    # player: Spielerinstanz, die mit dieser UI-Instanz verfolgt werden soll
     # speed_meter_sprites: Array der Sprites, die den Geschwindigkeitsmesser bilden
     # timer_sprites: Array der Sprites, die den Timer bilden
     def __init__(self, player, speed_meter_sprites, timer_sprites):
@@ -46,4 +46,4 @@ class UI:
             (int(elapsed_milliseconds) // 600000) % 10
         ]
 
-        # Energiebalken zeichnen
+        # Energieleiste zeichnen

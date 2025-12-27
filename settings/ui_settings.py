@@ -1,8 +1,8 @@
-# Settings for the in-race UI.
+# Einstellungen für die UI während des Rennens.
 
 import pygame
 from settings.renderer_settings import WIDTH, HEIGHT, RENDER_SCALE
-from settings.machine_settings import PURPLE_COMET_MAX_SPEED # for speed display factor
+from settings.machine_settings import PURPLE_COMET_MAX_SPEED # für Geschwindigkeitsanzeigefaktor
 
 # Hilfsfunktion zum Laden und Skalieren von UI-Sprites
 def load_scaled_ui_image(path):
@@ -14,43 +14,43 @@ def load_scaled_ui_image(path):
         img = pygame.transform.scale(img, (new_width, new_height))
     return img
 
-# UI screen coordinates
+# UI-Bildschirmkoordinaten
 
-# speed meter (Basis-Werte skaliert)
+# Geschwindigkeitsmesser (Basis-Werte skaliert)
 BASE_DIGIT_SPRITE_WIDTH = 16
 BASE_DIGIT_SPRITE_HEIGHT = 16
 SPEED_METER_DIGIT_SPRITE_WIDTH = int(BASE_DIGIT_SPRITE_WIDTH * RENDER_SCALE)
 SPEED_METER_DIGIT_SPRITE_HEIGHT = int(BASE_DIGIT_SPRITE_HEIGHT * RENDER_SCALE)
 RIGHT_MOST_SPEEDMETER_DIGIT_SCREEN_X_COORD = WIDTH - SPEED_METER_DIGIT_SPRITE_WIDTH
-SPEED_METER_DIGIT_SCREEN_Y_COORD = HEIGHT - 1.5 * SPEED_METER_DIGIT_SPRITE_HEIGHT # no padding in sprite so we add one of 12px in code
+SPEED_METER_DIGIT_SCREEN_Y_COORD = HEIGHT - 1.5 * SPEED_METER_DIGIT_SPRITE_HEIGHT # kein Padding im Sprite, daher fügen wir eines von 12px im Code hinzu
 
-# energy meter
-NUM_TIMER_DIGITS = 7 # some timer-related variables need to be defined here since timer and energy bar are aligned
+# Energiemesser
+NUM_TIMER_DIGITS = 7 # Einige Timer-bezogene Variablen müssen hier definiert werden, da Timer und Energieleiste ausgerichtet sind
 TIMER_DIGIT_SPRITE_WIDTH = SPEED_METER_DIGIT_SPRITE_WIDTH
 RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD = WIDTH - TIMER_DIGIT_SPRITE_WIDTH
 ENERGY_METER_HEIGHT = int(16 * RENDER_SCALE)
-ENERGY_METER_TOP_Y = int(4 * RENDER_SCALE) # offset of the energy meter from the top of the screen
+ENERGY_METER_TOP_Y = int(4 * RENDER_SCALE) # Versatz des Energiemessers von der Oberseite des Bildschirms
 ENERGY_METER_LEFT_X = RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - TIMER_DIGIT_SPRITE_WIDTH * NUM_TIMER_DIGITS
 
-# timer
+# Timer
 
 TIMER_DIGIT_SPRITE_HEIGHT = SPEED_METER_DIGIT_SPRITE_HEIGHT
-TIMER_DIGIT_SCREEN_Y_COORD = ENERGY_METER_TOP_Y + ENERGY_METER_HEIGHT # timer should be right below the shield meter
-TIMER_PADDING = TIMER_DIGIT_SPRITE_WIDTH / 2 # padding between minutes and seconds, seconds and milliseconds
-# Computes the individual x offset for the timer digits
-# (note that there are gaps 
-# between the digits for the minutes and seconds + seconds and milliseconds)
+TIMER_DIGIT_SCREEN_Y_COORD = ENERGY_METER_TOP_Y + ENERGY_METER_HEIGHT # Timer sollte direkt unter dem Schildmesser sein
+TIMER_PADDING = TIMER_DIGIT_SPRITE_WIDTH / 2 # Padding zwischen Minuten und Sekunden, Sekunden und Millisekunden
+# Berechnet den individuellen x-Versatz für die Timer-Ziffern
+# (beachten, dass es Lücken
+# zwischen den Ziffern für Minuten und Sekunden + Sekunden und Millisekunden gibt)
 def TIMER_DIGIT_X_OFFSET(i):
-    if i <= 2: # milliseconds digits
+    if i <= 2: # Millisekunden-Ziffern
         return RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - TIMER_DIGIT_SPRITE_WIDTH * i
-    if i > 2 and i <= 4: # seconds digits
+    if i > 2 and i <= 4: # Sekunden-Ziffern
         return RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - TIMER_DIGIT_SPRITE_WIDTH * i - TIMER_PADDING
-    return RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - TIMER_DIGIT_SPRITE_WIDTH * i - TIMER_PADDING * 2 # minute digits
+    return RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - TIMER_DIGIT_SPRITE_WIDTH * i - TIMER_PADDING * 2 # Minuten-Ziffern
 
-# end of UI screen coordinates
+# Ende der UI-Bildschirmkoordinaten
 
-# other UI configuration
-SPEED_DISPLAY_MULTIPLIER = 1426 / PURPLE_COMET_MAX_SPEED # so max speed of Purple Comet will be shown as 1426 km/h
+# Andere UI-Konfiguration
+SPEED_DISPLAY_MULTIPLIER = 1426 / PURPLE_COMET_MAX_SPEED # damit die Maximalgeschwindigkeit von Purple Comet als 1426 km/h angezeigt wird
 
 
 
@@ -59,8 +59,8 @@ GAME_OVER_OVERLAY_ALPHA = 180  # Transparenz des dunklen Overlays (0-255)
 GAME_OVER_IMAGE = load_scaled_ui_image('gfx/ui/game_over.png')
 PRESS_SPACE_IMAGE = load_scaled_ui_image('gfx/ui/press_space.png')
 
-# standard paths for the number sprites used in the game
-NUMBER_IMAGES = [ # index = pictured number
+# Standardpfade für die im Spiel verwendeten Zahlen-Sprites
+NUMBER_IMAGES = [ # Index = dargestellte Zahl
     load_scaled_ui_image('gfx/numbers/small_numbers0.png'),
     load_scaled_ui_image('gfx/numbers/small_numbers1.png'),
     load_scaled_ui_image('gfx/numbers/small_numbers2.png'),

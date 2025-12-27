@@ -3,8 +3,8 @@ import pygame
 
 from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # Debug-Konfiguration
 from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # Tastenbelegungs-Konfiguration
-from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # Render-Konfiguration
-from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # Spieler-Kollisions-Rechteck-Konfiguration
+from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # Rendering-Konfiguration
+from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # Spieler-Kollisionsrechteck-Konfiguration
 from settings.machine_settings import HEIGHT_DURING_JUMP, HIT_COST_SPEED_FACTOR, MIN_BOUNCE_BACK_FORCE
 from settings.machine_settings import OBSTACLE_HIT_SPEED_RETENTION 
 
@@ -17,23 +17,23 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
     # machine: die Maschine, die von diesem Spieler gesteuert wird
     # current_race: das Rennen, das der Spieler gerade fährt
     def __init__(self, machine, current_race):
-        # Referenz auf Renn-Daten
+        # Renn-Daten-Referenz,
         # um auf die Umgebung reagieren zu können
-        # und die Spieler-Position initialisieren zu können
+        # und die Spielerposition zu initialisieren
         self.current_race = current_race
         
         # Position und Rotation initialisieren (gemäß dem aktuell gefahrenen Rennen)
         self.reinitialize_position_angle()
         
         # Physik-Variablen
-        self.machine = machine # enthält alle relevanten Daten zu physikalischen Eigenschaften der Spieler-Maschine
+        self.machine = machine # enthält alle relevanten Daten zu den physikalischen Eigenschaften der Spielermaschine
         self.current_speed = 0 # wie schnell sich der Spieler im aktuellen Frame bewegt
-        self.centri = 0 # wie stark die Zentrifugalkraft ist, die im aktuellen Frame angewendet wird
+        self.centri = 0 # wie stark die im aktuellen Frame angewendete Zentrifugalkraft ist
 
-        # Aktuelle Menge an Energie, die der Maschine noch bleibt
+        # Aktuelle Energiemenge, die der Maschine noch verbleibt
         self.current_energy = self.machine.max_energy
 
-        # Animations-Variablen initialisieren durch Aufruf des entsprechenden Super-Klassen-Konstruktors
+        # Animationsvariablen initialisieren durch Aufruf des entsprechenden Superklassen-Konstruktors
         AnimatedMachine.__init__(self, 
             idle_anim = self.machine.idle_anim,
             driving_anim = self.machine.driving_anim
@@ -44,15 +44,15 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # Rendering-Variablen (für Maschine ohne Schatten).
         # Die x-Koordinate des Spielers ist immer fest,
-        # die y-Koordinate normalerweise auch,
+        # die y-Koordinate normalerweise auch fest,
         # wird während eines Sprungs gemäß einer konfigurierten quadratischen Funktion geändert.
-        pygame.sprite.Sprite.__init__(self) # Konstruktor der pygame Sprite-Klasse aufrufen (verantwortlich für Rendering)
+        pygame.sprite.Sprite.__init__(self) # Aufruf des Konstruktors der pygame Sprite-Klasse (verantwortlich für Rendering)
         self.image = self.current_frame()
         self.rect = self.image.get_rect()
         self.rect.topleft = [NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y]
 
-        # Erstellt ein neues Sprite-Objekt für den Maschinen-Schatten,
-        # der die ganze Zeit über fixiert bleibt.
+        # Neues Sprite-Objekt für den Maschinenschatten erstellen,
+        # der die ganze Zeit über fest bleibt.
         self.shadow_sprite = pygame.sprite.Sprite()
         shadow_img = pygame.image.load(self.machine.shadow_image_path)
         # Schatten skalieren entsprechend RENDER_SCALE
@@ -62,48 +62,48 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             shadow_img = pygame.transform.scale(shadow_img, (new_width, new_height))
         self.shadow_sprite.image = shadow_img
         self.shadow_sprite.rect = self.shadow_sprite.image.get_rect()
-        # Schatten-Sprite wird so erstellt, dass es in Ordnung ist, wenn Spieler + Schatten an denselben Bildschirmkoordinaten sind
+        # Schatten-Sprite wird so erstellt, dass es in Ordnung ist, wenn Spieler + Schatten dieselben Bildschirmkoordinaten haben
         self.shadow_sprite.rect.topleft = [NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y]
 
-        # Spieler Status-Flags/Variablen
+        # Spieler-Status-Flags/Variablen
         self.steering_left = False
         self.steering_right = False
         self.jumping = False
         self.jumped_off_timestamp = None # Zeitstempel, wann der Spieler zuletzt von einer Rampe gesprungen ist
         # Beim Springen: Dies ist die Dauer des Sprungs vom Start bis zur Landung.
-        # Benötigt, um die y-Koordinate des Spielers auf dem Bildschirm während des Sprungs zu berechnen.
+        # Wird benötigt, um die y-Koordinate des Spielers auf dem Bildschirm während des Sprungs zu berechnen.
         self.current_jump_duration = 0
         self.finished = False # ob der Spieler das aktuelle Rennen beendet hat
-        self.destroyed = False # ob die Spieler-Maschine zerstört wurde aufgrund eines Absturzes außerhalb der Grenzen oder keiner Energie mehr
+        self.destroyed = False # ob die Spielermaschine zerstört wurde aufgrund von Absturz außerhalb der Grenzen oder keine Energie mehr
         self.boosted = False
         self.last_boost_started_timestamp = None # Zeitstempel, wann der Spieler zuletzt einen Boost gestartet hat
-        self.has_boost_power = False # ob der Spieler seinen Booster verwenden darf (wird auf False gesetzt während der ersten Runde, wechselt zu True nach Abschluss der ersten Runde)
+        self.has_boost_power = False # ob der Spieler seinen Booster verwenden darf (während der ersten Runde auf False gesetzt, wechselt nach Abschluss der ersten Runde auf True)
 
     # Aktualisiert Spielerdaten und Position.
     # 
     # Parameter:
     # time: Anzahl der Frames seit Spielstart
     def update(self, time, delta):
-        # Spieler entsprechend Steuereingaben und aktueller Geschwindigkeit bewegen
+        # Spieler gemäß Lenkeingaben und aktueller Geschwindigkeit bewegen
         if IN_DEV_MODE:
             self.dev_mode_movement()
         elif not self.destroyed:
             self.racing_mode_movement(time, delta)
 
-        # Aktuelles rechteckiges Kollisions-Rechteck des Spielers speichern
-        # für die Verwendung in mehreren Umgebungsprüfungen und Aktualisierungen.
+        # Aktuelles rechteckiges Kollisionsrechteck des Spielers speichern
+        # zur Verwendung in mehreren Umgebungsprüfungen und Aktualisierungen.
         current_collision_rect = CollisionRect(
             pos = self.position,
             w = PLAYER_COLLISION_RECT_WIDTH,
             h = PLAYER_COLLISION_RECT_HEIGHT
         )
 
-        # Rundenzählung aktualisieren.
-        # Dafür benötigt das Strecken-Objekt die aktuelle Position des Spielers.
+        # Rundenzähler aktualisieren.
+        # Dafür benötigt das Streckenobjekt die aktuelle Position des Spielers.
         self.current_race.update_lap_count(current_collision_rect)
 
-        # Spieler boosten lassen, wenn auf Dash-Platte.
-        # Über eine Dash-Platte springen führt natürlich nicht zu einem Boost.
+        # Spieler boosten lassen, wenn auf Dash-Plate.
+        # Über eine Dash-Plate springen führt natürlich nicht zu einem Boost.
         if self.current_race.is_on_dash_plate(current_collision_rect) and not self.jumping and not self.boosted:
             self.boosted = True
             self.last_boost_started_timestamp = time # Zeitstempel zur Bestimmung, wann der Boost enden soll
@@ -111,47 +111,46 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             self.continue_boost(time)
 
         # Spieler springen lassen, wenn auf Rampe.
-        # Nur springen, wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
+        # Nur springen wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
         MIN_JUMP_SPEED = 2.0  # Mindestgeschwindigkeit für Sprung
         if self.current_race.is_on_ramp(current_collision_rect) and not self.jumping and self.current_speed >= MIN_JUMP_SPEED:
             self.jumping = True # Status-Flag setzen
-            self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # Dauer des Sprungs basierend auf Geschwindigkeit berechnen
+            self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # Sprungdauer basierend auf Geschwindigkeit berechnen
             self.jumped_off_timestamp = time # Zeitstempel zur Berechnung der Höhe in späteren Frames
         if self.jumping:
             self.continue_jump(time)
 
-        # Spieler Energie wiederherstellen lassen, wenn in Erholungszone.
-        # Über eine Erholungszone springen zählt natürlich nicht.
+        # Spieler Energie wiederherstellen lassen, wenn in Wiederherstellungszone.
+        # Über eine Wiederherstellungszone springen zählt natürlich nicht.
         if self.current_race.is_on_recovery_zone(current_collision_rect) and not self.jumping:
             self.current_energy += self.machine.recover_speed * delta
             if self.current_energy > self.machine.max_energy:
                 self.current_energy = self.machine.max_energy
 
-        # Aktuelle Animation des Spielers fortführen und das Bild des Spieler-Sprites aktualisieren
+        # Aktuelle Animation des Spielers vorrücken und Bild des Spieler-Sprites aktualisieren
         self.advance_current_animation(delta)
         self.image = self.current_frame()
 
 
-    # Moves and rotates the camera freely based on player input. 
+    # Bewegt und rotiert die Kamera frei basierend auf Spielereingaben.
     def dev_mode_movement(self):
-        # Compute sine and cosine of current angle 
-        # to be able to update player position
-        # based on their rotation.
+        # Sinus und Kosinus des aktuellen Winkels berechnen,
+        # um die Spielerposition basierend auf ihrer Rotation aktualisieren zu können.
         sin_a = numpy.sin(self.angle)
         cos_a = numpy.cos(self.angle)
 
-        # Store the scaled versions of those two values for convenience.
-        # Player always moves at maximum speed when in dev mode.
+        # Skalierte Versionen dieser beiden Werte für Bequemlichkeit speichern.
+        # Spieler bewegt sich im Dev-Modus immer mit maximaler Geschwindigkeit.
         speed_sin, speed_cos = self.machine.max_speed * sin_a, self.machine.max_speed * cos_a
 
-        # Initialize the variables holding the change in player position
-        # which are accumulated throughout the method.
+        # Variablen initialisieren, die die Änderung der Spielerposition halten,
+        # die während der Methode akkumuliert werden.
         dx, dy = 0, 0
 
-        # collect key events
+        # Tastenereignisse sammeln
         keys = pygame.key.get_pressed()
 
-        # accumulate the change in player position based on the pressed keys.
+        # Änderung der Spielerposition basierend auf gedrückten Tasten akkumulieren.
         if keys[pygame.K_w]:
             dx += speed_cos
             dy += speed_sin
@@ -165,11 +164,11 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             dx += speed_sin
             dy += -speed_cos
 
-        # Change player position
+        # Spielerposition ändern
         self.position[0] += dx
         self.position[1] += dy
 
-        # Change player rotation
+        # Spielerrotation ändern
         if keys[pygame.K_LEFT]:
             self.angle += self.rotation_speed
         if keys[pygame.K_RIGHT]:
@@ -177,94 +176,94 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         print("x: " + str(self.position[0]) + " y: " + str(self.position[1]) + " a: " + str(self.angle))
 
-    # Moves the player's machine as in a race (accelerating, braking and steering).
+    # Bewegt die Maschine des Spielers wie in einem Rennen (Beschleunigen, Bremsen und Lenken).
     #
-    # Parameters:
-    # time - the timestamp of the frame update in which this call was made
-    # delta - the time between this frame and the previous frame
+    # Parameter:
+    # time - der Zeitstempel des Frame-Updates, in dem dieser Aufruf gemacht wurde
+    # delta - die Zeit zwischen diesem Frame und dem vorherigen Frame
     def racing_mode_movement(self, time, delta):
-        # collect key events
+        # Tastenereignisse sammeln
         keys = pygame.key.get_pressed()
 
-        # determine whether the player intends to start a boost in this frame
+        # Bestimmen, ob der Spieler in diesem Frame einen Boost starten möchte
         if keys[STD_BOOST_KEY] and self.can_boost():
-            self.last_boost_started_timestamp = time # take timestamp
-            self.current_energy -= self.machine.boost_cost # boosting costs a bit of energy
-            self.boosted = True # status flag update
+            self.last_boost_started_timestamp = time # Zeitstempel nehmen
+            self.current_energy -= self.machine.boost_cost # Boosten kostet etwas Energie
+            self.boosted = True # Status-Flag aktualisieren
 
-        # Steering.
+        # Lenken.
         if keys[STD_LEFT_KEY] and not self.finished:
-            # update flags
+            # Flags aktualisieren
             self.steering_left = True
             self.steering_right = False
             
-            # rotate player
+            # Spieler rotieren
             self.angle += self.machine.rotation_speed * delta
             
         if keys[STD_RIGHT_KEY] and not self.finished:
-            # update flags
+            # Flags aktualisieren
             self.steering_left = False
             self.steering_right = True
             
-            # rotate player
+            # Spieler rotieren
             self.angle -= self.machine.rotation_speed * delta
 
-        # ------------ updating player's speed ------------------
+        # ------------ Aktualisierung der Spielergeschwindigkeit ------------------
         
-        # Increase speed when acceleration button pressed.
-        # Acceleration input should be ignored when the speed currently is above the machine's current max speed.
+        # Geschwindigkeit erhöhen, wenn Beschleunigungstaste gedrückt wird.
+        # Beschleunigungseingabe sollte ignoriert werden, wenn die Geschwindigkeit derzeit über der aktuellen Maximalgeschwindigkeit der Maschine liegt.
         current_max_speed = self.machine.boosted_max_speed if self.boosted else self.machine.max_speed
         if keys[STD_ACCEL_KEY] and not self.finished and not self.current_speed > current_max_speed:
-            # switch to driving animation
+            # Auf Fahranimation umschalten
             self.switch_to_driving_animation()
 
-            # Increase speed
+            # Geschwindigkeit erhöhen
             self.current_speed += (
                 self.machine.boosted_acceleration if self.boosted else self.machine.acceleration
             ) * delta
-        # Decrease speed heavily when brake button pressed.
-        # The player cannot brake when mid-air.
+        # Geschwindigkeit stark verringern, wenn Bremstaste gedrückt wird.
+        # Der Spieler kann nicht bremsen, wenn er in der Luft ist.
         elif keys[STD_BRAKE_KEY] and not self.finished and not self.jumping:
-            # no matter whether player moves forwards or backwards:
-            # transition to idle animation when player brakes
+            # Egal ob Spieler sich vorwärts oder rückwärts bewegt:
+            # Auf Leerlauf-Animation umschalten, wenn Spieler bremst
             self.switch_to_idle_animation()
 
-            # case 1: player currently moves forwards
+            # Fall 1: Spieler bewegt sich derzeit vorwärts
             if self.current_speed > 0:
                 self.current_speed -= self.machine.brake * delta 
-                # Clamp speed to zero since the player
-                # should not be able to drive backwards.
+                # Geschwindigkeit auf null begrenzen, da der Spieler
+                # nicht rückwärts fahren können sollte.
                 if self.current_speed < 0:
                     self.current_speed = 0
-            # case 2: player currently moves backwards (e.g. because of bouncing back)
+            # Fall 2: Spieler bewegt sich derzeit rückwärts (z.B. wegen Zurückprallens)
             elif self.current_speed < 0:
                 self.current_speed += self.machine.brake * delta
-                # Clamp speed to zero since the player 
-                # should not go forward again
+                # Geschwindigkeit auf null begrenzen, da der Spieler
+                # nicht wieder vorwärts gehen sollte
                 if self.current_speed > 0:
                     self.current_speed = 0
-        # Decrease speed slightly when neither acceleration nor brake button pressed.
-        # Decreasing hereby means approaching zero
-        # (otherwise the player would move backwards at increasing speed
-        # if no button is pressed).
+        # Geschwindigkeit leicht verringern, wenn weder Beschleunigungs- noch Bremstaste gedrückt wird.
+        # Verringern bedeutet hierbei Annäherung an null
+        # (ansonsten würde sich der Spieler rückwärts mit zunehmender Geschwindigkeit bewegen,
+        # wenn keine Taste gedrückt wird).
         else: 
-            # switch to idle animation
+            # Auf Leerlauf-Animation umschalten
             self.switch_to_idle_animation()
 
-            # In this game, the player does not lose speed while jumping.
+            # In diesem Spiel verliert der Spieler keine Geschwindigkeit während des Sprungs.
             if not self.jumping:
-                # Compute and apply speed loss
+                # Geschwindigkeitsverlust berechnen und anwenden
                 current_speed_loss = (self.machine.boosted_speed_loss 
-                    if self.boosted or self.current_speed > self.machine.max_speed # stronger speed loss when machine is above its regular top speed
+                    if self.boosted or self.current_speed > self.machine.max_speed # stärkerer Geschwindigkeitsverlust, wenn Maschine über ihrer regulären Höchstgeschwindigkeit ist
                     else self.machine.speed_loss) * delta
                 if self.current_speed > 0:
                     self.current_speed -= current_speed_loss
-                    # Clamp speed to zero (from below) to prevent jitter.
+                    # Geschwindigkeit auf null begrenzen (von unten), um Zittern zu verhindern.
                     if self.current_speed < 0:
                         self.current_speed = 0
                 elif self.current_speed < 0:
                     self.current_speed += current_speed_loss
-                    # Clamp speed to zero (from above) to prevent jitter.
+                    # Geschwindigkeit auf null begrenzen (von oben), um Zittern zu verhindern.
                     if self.current_speed > 0:
                         self.current_speed = 0
 
@@ -275,32 +274,32 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
 
 
-        # -------- computing centrifugal force strength -----------------
+        # -------- Berechnung der Zentrifugalkraftstärke -----------------
 
 
 
-        # If the player presses one of the turn buttons in the current frame,
-        # the centrifugal force increases (is capped at a certain limit)
-        # The increase in centrifugal forces is proportional to the player's current speed.
+        # Wenn der Spieler in diesem Frame eine der Lenktasten drückt,
+        # erhöht sich die Zentrifugalkraft (wird bei einem bestimmten Limit begrenzt).
+        # Die Erhöhung der Zentrifugalkräfte ist proportional zur aktuellen Geschwindigkeit des Spielers.
         if keys[STD_LEFT_KEY] or keys[STD_RIGHT_KEY]:
             self.centri += self.machine.centri_increase * self.current_speed * delta
             if self.centri > self.machine.max_centri:
                 self.centri = self.machine.max_centri
-        # otherwise: the applied centrifugal force decreases
-        # (cannot fall below 0)
+        # Andernfalls: Die angewendete Zentrifugalkraft verringert sich
+        # (kann nicht unter 0 fallen)
         else:
             self.centri -= self.machine.centri_decrease * delta 
             if self.centri < 0:
                 self.centri = 0
                 
-                # When the centrifugal forces are done wearing off,
-                # the turn is finished and the flags can be reset.
+                # Wenn die Zentrifugalkräfte abgeklungen sind,
+                # ist die Kurve beendet und die Flags können zurückgesetzt werden.
                 self.steering_left = False
                 self.steering_right = False 
 
 
 
-        # --------- end of computing centrifugal force strength ----------
+        # --------- Ende der Berechnung der Zentrifugalkraftstärke ----------
 
 
 
@@ -352,6 +351,11 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 # There is a minimal force that is always applied
                 # to prevent the player getting stuck outside the track boundaries.
                 self.current_speed = -(self.current_speed * OBSTACLE_HIT_SPEED_RETENTION + MIN_BOUNCE_BACK_FORCE)
+
+                # Zentrifugalkraft zurücksetzen um zu verhindern dass Spieler in Wand stecken bleibt
+                self.centri = 0
+                self.steering_left = False
+                self.steering_right = False
 
                 # Player loses energy.
                 self.lose_energy(self.current_speed)
@@ -419,21 +423,21 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # ------ end of actual movement of the player -----------------------
     
-    # Updates player status flags and moves the player
-    # to its current screen Y position
-    # depending on the time since the player jumped off the track.
+    # Aktualisiert Spieler-Status-Flags und bewegt den Spieler
+    # zu seiner aktuellen Bildschirm-Y-Position
+    # abhängig von der Zeit, seit der Spieler von der Strecke gesprungen ist.
     def continue_jump(self, time):
-        # compute time since jump started
+        # Zeit seit Sprungstart berechnen
         elapsed_time = time - self.jumped_off_timestamp
 
-        # moving up on screen = decreasing the y coordinate
+        # Nach oben auf dem Bildschirm bewegen = y-Koordinate verringern
         self.rect.topleft = [
             NORMAL_ON_SCREEN_PLAYER_POSITION_X, 
             NORMAL_ON_SCREEN_PLAYER_POSITION_Y - HEIGHT_DURING_JUMP(elapsed_time, self.current_jump_duration)
         ]
 
-        # End jump (reset status flag) if jump duration reached
-        # To prevent any visual artifacts, the player rect is reset to its normal y position on screen.
+        # Sprung beenden (Status-Flag zurücksetzen), wenn Sprungdauer erreicht
+        # Um visuelle Artefakte zu verhindern, wird das Spieler-Rechteck auf seine normale y-Position auf dem Bildschirm zurückgesetzt.
         if elapsed_time >= self.current_jump_duration:
             self.jumping = False
 
@@ -441,49 +445,49 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y
             ]
 
-            # if the player lands out of the track bounds, they have failed the run
+            # wenn der Spieler außerhalb der Streckengrenzen landet, hat er den Lauf nicht geschafft
             current_collision_rect = CollisionRect(
                 self.position,
                 PLAYER_COLLISION_RECT_WIDTH,
                 PLAYER_COLLISION_RECT_HEIGHT
             )
             if not self.current_race.is_on_track(current_collision_rect):
-                print("player out of bounds!")
+                print("Spieler außerhalb der Grenzen!")
                 self.destroy()
 
-    # Called once per frame if the player currently has a booster active.
-    # Checks whether the booster should end since its duration has exceeded.
+    # Wird einmal pro Frame aufgerufen, wenn der Spieler derzeit einen Booster aktiv hat.
+    # Prüft, ob der Booster enden sollte, da seine Dauer überschritten wurde.
     def continue_boost(self, time):
-        # compute time since boost started
+        # Zeit seit Booststart berechnen
         elapsed_time = time - self.last_boost_started_timestamp
 
-        # check whether boost should end
+        # prüfen, ob Boost enden sollte
         if elapsed_time > self.machine.boost_duration:
             self.boosted = False
 
-    # Determines whether the player is currently able to use their boost power.
-    # (i)   player must have booster unlocked (i.e. completed first lap, usually)
-    # (ii)  player cannot have a boost active at the moment
-    # (iii) player has to have enough energy
+    # Bestimmt, ob der Spieler derzeit seine Boost-Kraft verwenden kann.
+    # (i)   Spieler muss Booster freigeschaltet haben (d.h. erste Runde abgeschlossen, normalerweise)
+    # (ii)  Spieler kann keinen aktiven Boost im Moment haben
+    # (iii) Spieler muss genug Energie haben
     def can_boost(self):
         return self.has_boost_power and not self.boosted and self.current_energy >= self.machine.boost_cost
 
-    # (Re-)sets the player object to the initial position
-    # for the current race track.
-    # Also resets all forces that are currently applied to the player.
-    # Example usage: get the player to the start position at the start of a race
+    # (Neu-)Setzt das Spielerobjekt auf die initiale Position
+    # für die aktuelle Rennstrecke.
+    # Setzt auch alle Kräfte zurück, die derzeit auf den Spieler angewendet werden.
+    # Beispielverwendung: Spieler zur Startposition am Anfang eines Rennens bringen
     def reinitialize(self):
-        # reset position and rotation
+        # Position und Rotation zurücksetzen
         self.reinitialize_position_angle()
 
-        # reset forces
+        # Kräfte zurücksetzen
         self.current_speed = 0
         self.centri = 0
 
-        # reset energy to max
+        # Energie auf Maximum zurücksetzen
         self.current_energy = self.machine.max_energy
 
-        # reset status flags
+        # Status-Flags zurücksetzen
         self.jumping = False
         self.finished = False
         self.destroyed = False
@@ -492,28 +496,28 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         self.steering_left = False
         self.steering_right = False
 
-        # reset screen position
+        # Bildschirmposition zurücksetzen
         self.rect.topleft = [
             NORMAL_ON_SCREEN_PLAYER_POSITION_X,
             NORMAL_ON_SCREEN_PLAYER_POSITION_Y
         ]
 
-    # Resets the position and rotation of the player to the initial ones prescribed by the current race. 
+    # Setzt die Position und Rotation des Spielers auf die initialen zurück, die vom aktuellen Rennen vorgeschrieben sind.
     def reinitialize_position_angle(self):
         self.position = numpy.array([self.current_race.init_player_pos_x, self.current_race.init_player_pos_y])
         self.angle = self.current_race.init_player_angle
 
-    # Destroys the player machine by updating a status flag
-    # and playing the explosion animation.
+    # Zerstört die Spielermaschine durch Aktualisierung eines Status-Flags
+    # und Abspielen der Explosionsanimation.
     def destroy(self):
         self.destroyed = True
-        print("player machine destroyed!")
+        print("Spielermaschine zerstört!")
 
-    # Makes the player machine lose energy proportional to the passed force.
-    # Examples for forces are the machines current speed, the currently applied centrifugal force, ...
+    # Lässt die Spielermaschine Energie proportional zur übergebenen Kraft verlieren.
+    # Beispiele für Kräfte sind die aktuelle Geschwindigkeit der Maschine, die derzeit angewendete Zentrifugalkraft, ...
     def lose_energy(self, force):
-        # Uses a constant factor (see settings module) to scale current speed to energy loss.
-        # Lastly, the individual body strength of the machine is taken into account.
+        # Verwendet einen konstanten Faktor (siehe Settings-Modul), um die aktuelle Geschwindigkeit auf Energieverlust zu skalieren.
+        # Schließlich wird die individuelle Körperstärke der Maschine berücksichtigt.
         lost_energy = (abs(force) * HIT_COST_SPEED_FACTOR) * self.machine.hit_cost
         
         self.current_energy -= lost_energy

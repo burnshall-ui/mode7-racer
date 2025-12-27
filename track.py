@@ -1,9 +1,9 @@
 # Eine Klasse, die (die Kollisionskarte für) eine Rennstrecke modelliert.
-# Objekte der Klasse enthalten einen Namen und mehrere Listen von Kollisions-Rechtecken,
-# die die Streckenoberfläche, Rampen, verschiedene Arten von Features und Hindernissen modellieren, ...
+# Objekte der Klasse enthalten einen Namen und mehrere Listen von Kollisionsrechtecken,
+# die die Streckenoberfläche, Rampen, verschiedene Arten von Gimmicks und Hindernissen modellieren, ...
 #
 # Parameter floor_texture_path und bg_texture_path sind die Pfade zu den Texturen für die Strecke und den Planeten
-# sowie für den skybox-ähnlichen Hintergrund.
+# sowie für den Skybox-ähnlichen Hintergrund.
 class Track:
     def __init__(self, name, track_surface_rects, key_checkpoint_rects, ramp_rects, finish_line_collider, 
             dash_plate_rects, recovery_rects, has_guard_rails):
@@ -31,40 +31,40 @@ class Track:
 
 
 
-    # Diese Methoden prüfen, ob ein übergebenes rechteckiges Kollisions-Rechteck
-    # mit etwas auf der Strecke kollidiert.
+    # Diese Methoden prüfen, ob ein übergebenes rechteckiges Kollisionsrechteck
+    # mit etwas auf der Strecke kollidiert.  
 
 
 
-    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf der Streckenoberfläche ist oder nicht.
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck auf der Streckenoberfläche ist oder nicht.
     # 
     # Parameter:
     # other (CollisionRect)
     def is_on_track(self, other):
         return collides_with_list(self.track_surface_rects, other)
 
-    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck eine Dash-Platte auf der Strecke trifft oder nicht.
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck eine Dash-Plate auf der Strecke trifft oder nicht.
     #
     # Parameter:
     # other (CollisionRect)
     def is_on_dash_plate(self, other):
         return collides_with_list(self.dash_plate_rects, other)
 
-    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck eine Erholungszone auf der Strecke trifft.
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck eine Wiederherstellungszone auf der Strecke trifft.
     #
     # Parameter:
     # other (CollisionRect)
     def is_on_recovery_zone(self, other):
         return collides_with_list(self.recovery_zone_rects, other)
 
-    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf einer Rampe ist oder nicht.
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck auf einer Rampe ist oder nicht.
     #
     # Parameter:
     # other (CollisionRect)
     def is_on_ramp(self, other):
         return collides_with_list(self.ramp_rects, other)
 
-    # Bestimmt, ob das übergebene rechteckige Kollisions-Rechteck auf der Ziellinie ist oder nicht.
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck auf der Ziellinie ist oder nicht.
     #
     # Parameter:
     # other (CollisionRect)
@@ -77,19 +77,19 @@ class Track:
 
 
 
-    # --------------------- Methoden zur Behandlung der Schlüssel-Checkpoints auf der Strecke ------------------
+    # --------------------- Methoden für die Behandlung der Schlüssel-Checkpoints auf der Strecke ------------------
 
 
 
-    # Prüft für jeden Schlüssel-Checkpoint, ob das übergebene Spieler-Kollisions-Rechteck
+    # Prüft für jeden Schlüssel-Checkpoint, ob das übergebene Spieler-Kollisionsrechteck
     # über einem (oder mehreren) Schlüssel-Checkpoint liegt.
-    # Falls ja, werden diese Schlüssel-Checkpoints als passiert markiert.
+    # Wenn ja, werden diese Schlüssel-Checkpoints als passiert markiert.
     def update_key_checkpoints(self, player_coll):
         for key_checkpoint in self.key_checkpoints:
             if key_checkpoint.collider.overlap(player_coll):
                 key_checkpoint.passed = True
 
-    # Gibt genau dann True zurück,
+    # Gibt genau dann true zurück,
     # wenn der Spieler alle Schlüssel-Checkpoints auf der Strecke passiert hat.
     def all_key_checkpoints_passed(self):
         for key_checkpoint in self.key_checkpoints:
@@ -97,41 +97,41 @@ class Track:
                 return False
         return True
 
-    # Setzt die Passiert-Flags aller Schlüssel-Checkpoints auf False.
+    # Setzt die Passiert-Flags aller Schlüssel-Checkpoints auf false.
     def reset_key_checkpoints(self):
         for key_checkpoint in self.key_checkpoints:
             key_checkpoint.passed = False
 
 
 
-    # ----------------- Ende der Methoden zur Behandlung der Schlüssel-Checkpoints auf der Strecke
+    # ----------------- Ende der Methoden für die Behandlung der Schlüssel-Checkpoints auf der Strecke
 
 
 
     # Kapselt die Prüfung, ob die Leitplanken auf dieser Strecke
     # in einem bestimmten Frame aktiv sind.
-    # Beachte, dass dies möglicherweise nicht nur davon abhängt, ob die Strecke Leitplanken hat,
+    # Beachte, dass dies nicht nur davon abhängen könnte, ob die Strecke Leitplanken hat,
     # sondern auch Fallen auf der Strecke könnten die Leitplanken der Strecke vorübergehend deaktivieren können.
     def guard_rails_active(self):
         return self.has_guard_rails
 
 
 
-# Ein Schlüssel-Checkpoint für das Rundenzählungssystem.
+# Ein Schlüssel-Checkpoint für das Rundenzählsystem.
 # Besteht aus einem CollisionRect und einem Passiert-Flag.
 #
 # Wenn der Spieler alle Schlüssel-Checkpoints passiert und dann die Ziellinie,
 # zählt dies als abgeschlossene Runde.
-# In beiden Fällen wird die Liste der passierten Schlüssel-Checkpoints zurückgesetzt.
+# In jedem Fall wird die Liste der passierten Schlüssel-Checkpoints zurückgesetzt.
 class KeyCheckpoint:
-    # Erstellt eine neue Schlüssel-Checkpoint-Instanz mit dem übergebenen Kollisions-Rechteck.
-    # Anfangs ist der Checkpoint als nicht passiert vom Spieler markiert.
+    # Erstellt eine neue Schlüssel-Checkpoint-Instanz mit dem übergebenen Kollisionsrechteck.
+    # Anfangs ist der Checkpoint als nicht vom Spieler passiert markiert.
     def __init__(self, collider):
         self.collider = collider
         self.passed = False
 
-# Prüft, ob das übergebene rechteckige Kollisions-Rechteck
-# mit einem der Kollisions-Rechtecke in der übergebenen Liste kollidiert.
+# Prüft, ob das übergebene rechteckige Kollisionsrechteck
+# mit einem der Kollisionsrechtecke in der übergebenen Liste kollidiert.
 #
 # Parameter:
 # list      - Liste von CollisionRect

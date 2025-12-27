@@ -1,15 +1,15 @@
-# Eine Liga besteht aus 5 aufeinanderfolgenden Rennen (gespeichert als Liste),
-# die der Spieler absolvieren muss, um die Liga abzuschließen.
+# Eine Liga besteht aus 5 aufeinanderfolgenden Rennen (als Liste gespeichert),
+# die der Spieler abschließen muss, um die Liga zu vervollständigen.
 class League:
     def __init__(self, races):
         self.races = races
-        self.current_race_index = 0 # Index des Rennens, das der Spieler aktuell fährt
+        self.current_race_index = 0 # Index des Rennens, das der Spieler derzeit fährt
 
-    # Gibt die Anzahl der Rennen zurück, aus der diese Liga besteht.
+    # Gibt die Anzahl der Rennen zurück, aus denen diese Liga besteht.
     def length(self):
         return len(self.races)
 
-    # Gibt das Datenobjekt zurück, das das Rennen repräsentiert, das der Spieler aktuell fährt.
+    # Gibt das Datenobjekt zurück, das das Rennen repräsentiert, das der Spieler derzeit fährt.
     def current_race(self):
         return self.races[self.current_race_index]
 
@@ -18,7 +18,7 @@ class League:
         self.current_race_index += 1
         return self.current_race()
 
-    # Gibt True zurück genau dann, wenn der Spieler diese Liga abgeschlossen hat.
+    # Gibt genau dann True zurück, wenn der Spieler diese Liga abgeschlossen hat.
     def is_completed(self):
         return self.current_race_index >= self.length()
 
