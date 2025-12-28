@@ -1,10 +1,12 @@
 # Startbildschirm und Menü-System
 import pygame
+from pygame import mixer
 import sys
 import math
 import time
 from settings.renderer_settings import WIDTH, HEIGHT, WIN_RES
 from settings.league_settings import SINGLE_MODE_RACES
+from settings.music_settings import BGM_DICT, MUSIC_VOLUME
 
 class Menu:
     def __init__(self, screen):
@@ -13,6 +15,11 @@ class Menu:
 
         # Pygame Font initialisieren
         pygame.font.init()
+
+        # Menü-Musik starten
+        mixer.music.load(BGM_DICT["menu"])
+        mixer.music.set_volume(MUSIC_VOLUME)
+        mixer.music.play(-1)  # -1 = Endlosschleife
 
         # Farben im Retro-Style (SNES F-Zero inspiriert)
         self.COLOR_BG_TOP = (10, 5, 30)  # Dunkelblau-Violett
@@ -30,6 +37,18 @@ class Menu:
 
         # Animations-Timer
         self.start_time = time.time()
+
+        # Logo-Image laden
+        try:
+            self.logo_image = pygame.image.load("gfx/ui/mode7_logo.png").convert_alpha()
+            # Auf passende Größe skalieren (ca. 320px breit für 640x360 Auflösung)
+            logo_width = int(320 * (WIDTH / 640))  # Skaliert mit der Auflösung
+            logo_height = int(self.logo_image.get_height() * (logo_width / self.logo_image.get_width()))
+            self.logo_image = pygame.transform.smoothscale(self.logo_image, (logo_width, logo_height))
+            self.has_logo_image = True
+        except Exception as e:
+            self.has_logo_image = False
+            print(f"Logo-Image nicht gefunden: {e}, verwende Text-Fallback")
 
         # Menü-Zustand
         self.current_screen = "main"  # "main" oder "track_select"
@@ -76,6 +95,8 @@ class Menu:
             pygame.display.flip()
             self.clock.tick(60)
 
+        # Menü-Musik stoppen bevor Rennen startet
+        mixer.music.stop()
         return self.selected_race
 
     def handle_main_menu_input(self, key):
@@ -134,38 +155,56 @@ class Menu:
         elapsed = time.time() - self.start_time
         pulse = abs(math.sin(elapsed * 2)) * 0.2 + 0.8  # Pulsiert zwischen 0.8 und 1.0
 
-        # Titel mit pulsierendem Glow-Effekt
-        title_text = "MODE7 RACER"
+        # Logo rendern (Image oder Text-Fallback)
+        if self.has_logo_image:
+            # Logo mit leichtem Pulsier-Effekt
+            logo_alpha = int(255 * pulse)
+            logo_copy = self.logo_image.copy()
+            logo_copy.set_alpha(logo_alpha)
+            logo_x = WIDTH // 2 - logo_copy.get_width() // 2
+            logo_y = int(20 * (HEIGHT / 360))  # Oben positioniert, skaliert mit Auflösung
 
-        # Mehrfache Schatten für Glow-Effekt
-        for offset in [8, 6, 4, 2]:
-            glow_alpha = int(100 * pulse)
-            glow = self.font_title.render(title_text, True, (255, 200, 0))
-            glow.set_alpha(glow_alpha)
-            self.screen.blit(glow, (WIDTH // 2 - glow.get_width() // 2 + offset, 50 + offset))
+            # Hauptlogo zeichnen (ohne extra Glow - das PNG hat bereits einen)
+            self.screen.blit(logo_copy, (logo_x, logo_y))
 
-        # Haupttitel mit Pulsieren
-        title_color = (
-            int(255 * pulse),
-            int(220 * pulse),
-            0
-        )
-        title = self.font_title.render(title_text, True, title_color)
-        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 50))
+            # Y-Position nach dem Logo für weitere Elemente (mehr Abstand)
+            after_logo_y = logo_y + logo_copy.get_height() + int(15 * (HEIGHT / 360))
+        else:
+            # Text-Fallback mit dem originalen pulsierenden Glow-Effekt
+            title_text = "MODE7 RACER"
+            
+            # Mehrfache Schatten für Glow-Effekt
+            for offset in [8, 6, 4, 2]:
+                glow_alpha = int(100 * pulse)
+                glow = self.font_title.render(title_text, True, (255, 200, 0))
+                glow.set_alpha(glow_alpha)
+                self.screen.blit(glow, (WIDTH // 2 - glow.get_width() // 2 + offset, 50 + offset))
+
+            # Haupttitel mit Pulsieren
+            title_color = (
+                int(255 * pulse),
+                int(220 * pulse),
+                0
+            )
+            title = self.font_title.render(title_text, True, title_color)
+            self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 50))
+            
+            after_logo_y = 150
 
         # Untertitel mit Blink-Effekt
         if int(elapsed * 2) % 2 == 0:
             subtitle = self.font_small.render("F-ZERO STYLE RACING", True, self.COLOR_ACCENT)
-            self.screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, 150))
+            self.screen.blit(subtitle, (WIDTH // 2 - subtitle.get_width() // 2, after_logo_y))
 
         # Menü-Box Hintergrund - kompakt und zentriert
-        menu_box_rect = pygame.Rect(WIDTH // 2 - 200, 210, 400, 150)
+        menu_box_y = after_logo_y + 40
+        menu_box_rect = pygame.Rect(WIDTH // 2 - 200, menu_box_y, 400, 150)
         pygame.draw.rect(self.screen, (20, 10, 40, 180), menu_box_rect)
         pygame.draw.rect(self.screen, self.COLOR_BORDER, menu_box_rect, 3)
 
         # Menü-Optionen - kompakt mit gleichmäßigem Padding
         menu_items = ["START RACE", "OPTIONS", "QUIT"]
-        start_y = 235
+        start_y = menu_box_y + 25
 
         for i, item in enumerate(menu_items):
             is_selected = i == self.selected_index
