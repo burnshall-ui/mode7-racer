@@ -16,6 +16,8 @@ Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 
 ## Änderungen in diesem Fork
 
+- Retro-Menüsystem mit Logo und Streckenauswahl
+- Menü-Musik
 - Höhere Auflösung mit dynamischem Skalierungssystem
 - Pfeiltasten-Steuerung (intuitiver)
 - Angepasste Spielgeschwindigkeit für bessere Spielbarkeit
