@@ -396,13 +396,17 @@ class App:
     def check_event(self):
         for event in pygame.event.get():
             # Prozess beenden, der das Spiel ausführt,
-            # wenn Escape-Taste gedrückt wird oder etwas anderes das Beenden-Ereignis verursacht
+            # wenn etwas das Beenden-Ereignis verursacht
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
 
             # Prüft auf Tastendrücke in Menübildschirmen
             if event.type == pygame.KEYDOWN:
+                # ESC: Pause-Menü während des Rennens
+                if event.key == pygame.K_ESCAPE and self.in_racing_mode and not self.player.finished and not self.player.destroyed:
+                    self.show_pause_menu()
+
                 if event.key == STD_CONFIRM_KEY and self.player.finished:
                     self.should_load_next_race = True
                 # Game Over: Leertaste zum Neustarten
@@ -573,6 +577,112 @@ class App:
         time_text.set_alpha(alpha)
         time_rect = time_text.get_rect(center=(WIDTH // 2, y_position + 30 * RENDER_SCALE))
         self.screen.blit(time_text, time_rect)
+
+    def show_pause_menu(self):
+        """Zeigt das Pause-Menü und behandelt die Menü-Navigation"""
+        paused = True
+        selected_option = 0
+        menu_options = ["CONTINUE", "RESTART", "QUIT"]
+
+        # Fonts (20% kleiner)
+        title_font = get_pixel_font(int(38 * RENDER_SCALE))
+        menu_font = get_pixel_font(int(19 * RENDER_SCALE))
+
+        # Farben (wie im Hauptmenü)
+        COLOR_SELECTED = (255, 50, 200)  # Magenta
+        COLOR_TEXT = (180, 200, 255)     # Helles Blau-Weiß
+        COLOR_BG = (20, 10, 40)          # Dunkelblau-Violett
+        COLOR_BORDER = (100, 100, 150)   # Grau-Blau
+
+        # Sound laden (falls vorhanden)
+        try:
+            beep_sound = mixer.Sound("sounds/beep-menu.mp3")
+            beep_sound.set_volume(0.6)
+            confirm_sound = mixer.Sound("sounds/beep-auswahl.mp3")
+            confirm_sound.set_volume(1.2)
+        except:
+            beep_sound = None
+            confirm_sound = None
+
+        clock = pygame.time.Clock()
+
+        while paused:
+            # Events behandeln
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        selected_option = (selected_option - 1) % len(menu_options)
+                        if beep_sound:
+                            beep_sound.play()
+                    elif event.key == pygame.K_DOWN:
+                        selected_option = (selected_option + 1) % len(menu_options)
+                        if beep_sound:
+                            beep_sound.play()
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                        if confirm_sound:
+                            confirm_sound.play()
+
+                        if selected_option == 0:  # Continue
+                            paused = False
+                        elif selected_option == 1:  # Restart
+                            self.load_race(self.current_league.current_race())
+                            paused = False
+                        elif selected_option == 2:  # Quit
+                            pygame.quit()
+                            sys.exit()
+                    elif event.key == pygame.K_ESCAPE:
+                        # ESC schließt das Pause-Menü
+                        paused = False
+
+            # Halbtransparentes Overlay über das Spiel zeichnen
+            overlay = pygame.Surface((WIDTH, HEIGHT))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(180)
+            self.screen.blit(overlay, (0, 0))
+
+            # "PAUSED" Titel
+            title_text = title_font.render("PAUSED", True, (255, 255, 100))
+            title_rect = title_text.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 64))
+            self.screen.blit(title_text, title_rect)
+
+            # Menü-Box (20% kleiner)
+            box_width = int(224 * RENDER_SCALE)
+            box_height = len(menu_options) * int(32 * RENDER_SCALE) + int(32 * RENDER_SCALE)
+            box_x = WIDTH // 2 - box_width // 2
+            box_y = HEIGHT // 2 - int(16 * RENDER_SCALE)
+
+            box_surface = pygame.Surface((box_width, box_height), pygame.SRCALPHA)
+            box_surface.fill((*COLOR_BG, 200))
+            self.screen.blit(box_surface, (box_x, box_y))
+
+            # Border
+            pygame.draw.rect(self.screen, COLOR_BORDER,
+                           pygame.Rect(box_x, box_y, box_width, box_height), 3)
+
+            # Menü-Optionen
+            for i, option in enumerate(menu_options):
+                is_selected = i == selected_option
+                color = COLOR_SELECTED if is_selected else COLOR_TEXT
+
+                option_text = menu_font.render(option, True, color)
+                text_x = WIDTH // 2 - option_text.get_width() // 2
+                text_y = box_y + int(16 * RENDER_SCALE) + i * int(32 * RENDER_SCALE)
+
+                # Pfeile für ausgewählte Option
+                if is_selected:
+                    arrow_left = menu_font.render(">>", True, COLOR_SELECTED)
+                    arrow_right = menu_font.render("<<", True, COLOR_SELECTED)
+                    self.screen.blit(arrow_left, (text_x - int(32 * RENDER_SCALE), text_y))
+                    self.screen.blit(arrow_right, (text_x + option_text.get_width() + int(16 * RENDER_SCALE), text_y))
+
+                self.screen.blit(option_text, (text_x, text_y))
+
+            pygame.display.flip()
+            clock.tick(60)
 
 # Ausführung der Spielschleife, wenn als Skript ausgeführt.
 if __name__ == '__main__':

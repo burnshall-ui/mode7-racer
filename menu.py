@@ -16,10 +16,25 @@ class Menu:
         # Pygame Font initialisieren
         pygame.font.init()
 
-        # Menü-Musik starten
+        # Menü-Musik vorbereiten (aber noch nicht starten - erst nach Intro)
         mixer.music.load(BGM_DICT["menu"])
-        mixer.music.set_volume(MUSIC_VOLUME)
-        mixer.music.play(-1)  # -1 = Endlosschleife
+        mixer.music.set_volume(MUSIC_VOLUME * 0.70)  # 30% leiser als Standard
+
+        # Menü-Navigation Sound laden
+        try:
+            self.beep_sound = mixer.Sound("sounds/beep-menu.mp3")
+            self.beep_sound.set_volume(0.6)  # 60% Lautstärke
+        except Exception as e:
+            print(f"Beep-Sound konnte nicht geladen werden: {e}")
+            self.beep_sound = None
+
+        # Bestätigungs-Sound laden
+        try:
+            self.confirm_sound = mixer.Sound("sounds/beep-auswahl.mp3")
+            self.confirm_sound.set_volume(1.2)  # 120% Lautstärke
+        except Exception as e:
+            print(f"Bestätigungs-Sound konnte nicht geladen werden: {e}")
+            self.confirm_sound = None
 
         # Farben im Retro-Style (SNES F-Zero inspiriert)
         self.COLOR_BG_TOP = (10, 5, 30)  # Dunkelblau-Violett
@@ -61,8 +76,105 @@ class Menu:
             "Event Horizon I"
         ]
 
+    def show_intro(self):
+        """Zeigt das animierte Logo-Intro"""
+        intro_start = time.time()
+        zoom_duration = 1.5  # Zoom-Animation Dauer (langsamer, passt zum Sound)
+        music_started = False  # Flag für Musik-Start
+
+        # Intro-Logo laden (falls nicht schon geladen)
+        try:
+            intro_logo_original = pygame.image.load("gfx/ui/mode7_logo.png").convert_alpha()
+            logo_width = int(400 * (WIDTH / 640))
+            logo_height = int(intro_logo_original.get_height() * (logo_width / intro_logo_original.get_width()))
+            intro_logo_base = pygame.transform.smoothscale(intro_logo_original, (logo_width, logo_height))
+        except:
+            return  # Kein Logo, kein Intro
+
+        # Logo-Sound abspielen
+        try:
+            logo_sound = mixer.Sound("sounds/efect-logo.mp3")
+            logo_sound.set_volume(0.8)
+            logo_sound.play()
+        except Exception as e:
+            print(f"Logo-Sound konnte nicht geladen werden: {e}")
+
+        while True:
+            elapsed = time.time() - intro_start
+
+            # Schwarzer Hintergrund
+            self.screen.fill((0, 0, 0))
+
+            # Zoom-Animation mit Bounce
+            if elapsed < zoom_duration:
+                # Zoom von 0.3 zu 1.1 (overshoot)
+                progress = elapsed / zoom_duration
+                # Easing: schnell rein, dann bounce
+                if progress < 0.7:
+                    scale = 0.3 + (progress / 0.7) * 1.1  # Zu 1.1 zoomen
+                else:
+                    # Bounce zurück zu 1.0
+                    bounce_progress = (progress - 0.7) / 0.3
+                    scale = 1.1 - (bounce_progress * 0.1)
+                logo_alpha = int(255 * progress)
+            else:
+                # Finale Größe
+                scale = 1.0
+                logo_alpha = 255
+
+            # Logo skalieren
+            scaled_width = int(intro_logo_base.get_width() * scale)
+            scaled_height = int(intro_logo_base.get_height() * scale)
+            intro_logo = pygame.transform.smoothscale(intro_logo_base, (scaled_width, scaled_height))
+
+            logo_x = WIDTH // 2 - intro_logo.get_width() // 2
+            logo_y = HEIGHT // 2 - intro_logo.get_height() // 2
+
+            # Logo rendern
+            logo_copy = intro_logo.copy()
+            logo_copy.set_alpha(logo_alpha)
+            self.screen.blit(logo_copy, (logo_x, logo_y))
+
+            # Schwarze Streifen über das Logo legen (Sliced-Effekt)
+            stripe_height = 2  # Dicke der schwarzen Streifen
+            stripe_spacing = 8  # Abstand zwischen den Streifen
+
+            for y in range(0, intro_logo.get_height(), stripe_spacing):
+                stripe_alpha = int(255 * (logo_alpha / 255))
+                stripe_surface = pygame.Surface((intro_logo.get_width(), stripe_height), pygame.SRCALPHA)
+                stripe_surface.fill((0, 0, 0, stripe_alpha))
+                self.screen.blit(stripe_surface, (logo_x, logo_y + y))
+
+            # Menü-Musik starten nach der Animation
+            if elapsed >= zoom_duration and not music_started:
+                mixer.music.play(-1)  # -1 = Endlosschleife
+                music_started = True
+
+            # "PRESS ANY KEY" Text - nur anzeigen nach Zoom-Animation
+            if elapsed >= zoom_duration:
+                # Blinken wie im Hauptmenü
+                if int(elapsed * 2) % 2 == 0:
+                    press_text = self.font_small.render("PRESS ANY KEY TO CONTINUE", True, self.COLOR_SELECTED)
+                    text_x = WIDTH // 2 - press_text.get_width() // 2
+                    text_y = HEIGHT - 40  # 40px vom unteren Rand
+                    self.screen.blit(press_text, (text_x, text_y))
+
+            pygame.display.flip()
+            self.clock.tick(60)
+
+            # Events behandeln
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and elapsed >= zoom_duration:
+                    return  # Intro beenden, nur nach Zoom-Animation
+
     def run(self):
         """Hauptschleife des Menüs - gibt die gewählte Strecke zurück"""
+        # Intro anzeigen (Musik wird automatisch nach der Animation gestartet)
+        self.show_intro()
+
         running = True
 
         while running:
@@ -95,9 +207,15 @@ class Menu:
         """Behandelt Eingaben im Hauptmenü"""
         if key == pygame.K_UP:
             self.selected_index = (self.selected_index - 1) % 3
+            if self.beep_sound:
+                self.beep_sound.play()
         elif key == pygame.K_DOWN:
             self.selected_index = (self.selected_index + 1) % 3
+            if self.beep_sound:
+                self.beep_sound.play()
         elif key == pygame.K_RETURN or key == pygame.K_SPACE:
+            if self.confirm_sound:
+                self.confirm_sound.play()
             if self.selected_index == 0:  # Start Race
                 self.current_screen = "track_select"
                 self.selected_index = 0
@@ -113,9 +231,15 @@ class Menu:
         """Behandelt Eingaben in der Streckenauswahl"""
         if key == pygame.K_UP:
             self.selected_race = (self.selected_race - 1) % len(SINGLE_MODE_RACES)
+            if self.beep_sound:
+                self.beep_sound.play()
         elif key == pygame.K_DOWN:
             self.selected_race = (self.selected_race + 1) % len(SINGLE_MODE_RACES)
+            if self.beep_sound:
+                self.beep_sound.play()
         elif key == pygame.K_RETURN or key == pygame.K_SPACE:
+            if self.confirm_sound:
+                self.confirm_sound.play()
             return False  # Menü beenden, Rennen starten
         elif key == pygame.K_ESCAPE:
             self.current_screen = "main"
@@ -209,10 +333,14 @@ class Menu:
 
             # Nur Pfeil für ausgewähltes Item - KEINE BOX!
             if is_selected:
-                # Animierter Pfeil
+                # Animierter Pfeil links
                 arrow_offset = int(math.sin(elapsed * 5) * 10)
-                arrow = self.font_menu.render(">>", True, self.COLOR_SELECTED)
-                self.screen.blit(arrow, (text_x - 60 + arrow_offset, text_y))
+                arrow_left = self.font_menu.render(">>", True, self.COLOR_SELECTED)
+                self.screen.blit(arrow_left, (text_x - 60 + arrow_offset, text_y))
+
+                # Animierter Pfeil rechts
+                arrow_right = self.font_menu.render("<<", True, self.COLOR_SELECTED)
+                self.screen.blit(arrow_right, (text_x + text.get_width() + 20 - arrow_offset, text_y))
 
             # Text zeichnen
             self.screen.blit(text, (text_x, text_y))

@@ -24,14 +24,19 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
 
 ## Änderungen in diesem Fork
 
-- Retro-Menüsystem mit Logo und Streckenauswahl
-- Menü-Musik
+- **Animiertes Logo-Intro** mit Zoom-Effekt und Sound
+- **Retro-Menüsystem** mit Logo, Streckenauswahl und Sound-Effekten
+  - Navigation-Sounds beim Blättern
+  - Bestätigungs-Sound bei Auswahl
+  - Animierte Pfeile von beiden Seiten (SNES-Style)
+- **Pause-Menü** (ESC während des Rennens) mit Continue/Restart/Quit
+- Menü-Musik mit angepasster Lautstärke
 - Höhere Auflösung mit dynamischem Skalierungssystem
 - Pfeiltasten-Steuerung (intuitiver)
 - Angepasste Spielgeschwindigkeit für bessere Spielbarkeit
 - SNES-Style Game Over Bildschirm
 - Rückwärtssprung-Bug behoben
-- **NEU: Map Editor** zum visuellen Erstellen von Strecken-Kollisionen
+- **Map Editor** zum visuellen Erstellen von Strecken-Kollisionen
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
@@ -127,7 +132,16 @@ Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mo
 | **Pfeil Hoch** | Beschleunigen |
 | **Pfeil Runter** | Bremsen |
 | **Leertaste** | Booster verwenden (nach 1 Runde freigeschaltet) |
-| **R** | Rennen neu starten |
+| **ESC** | Pause-Menü öffnen |
+| **R** | Rennen neu starten (Debug) |
+
+### Menü-Steuerung
+
+| Taste | Funktion |
+|-------|----------|
+| **Pfeil Hoch/Runter** | Menü-Navigation |
+| **Enter / Leertaste** | Bestätigen |
+| **ESC** | Pause-Menü schließen |
 
 Jedes Rennen erfordert 3 Runden zum Abschluss.
 Nach Abschluss eines Rennens drücke Leertaste, um zum nächsten zu springen.
