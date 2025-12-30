@@ -11,8 +11,16 @@ Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 
 <p float="left">
   <img width="448" alt="2" src="https://user-images.githubusercontent.com/28012017/235456666-2fbcc8e8-52da-46f9-be8d-3eae1fcce96b.png">
-  <img width="449" alt="3" src="https://user-images.githubusercontent.com/28012017/235456683-48ec5b33-b2ac-4ee9-9655-f82cf4b70983.png">
+  <img width="449" alt="3" src="https://user-images.githubusercontent.com/28012017/235456683-48ec5b33-b2ad-4ee9-9655-f82cf4b70983.png">
 </p>
+
+## Aktueller Status
+
+**Testversion mit 2 funktionierenden Strecken:**
+- Funktioniert1 (neue selbst erstellte Strecke)
+- Event Horizon I
+
+Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht zur Textur.
 
 ## Änderungen in diesem Fork
 
@@ -23,6 +31,7 @@ Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 - Angepasste Spielgeschwindigkeit für bessere Spielbarkeit
 - SNES-Style Game Over Bildschirm
 - Rückwärtssprung-Bug behoben
+- **NEU: Map Editor** zum visuellen Erstellen von Strecken-Kollisionen
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
@@ -32,27 +41,93 @@ Wenn du den Prototyp nur ausprobieren möchtest und die erforderlichen Abhängig
 Bitte beachte, dass der ursprüngliche Inhalt dieses Repositories unter der Creative Commons Lizenz CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/) verfügbar ist.
 Ursprünglicher Autor: [pschuermann97](https://github.com/pschuermann97)
 
+## Map Editor
+
+Der Map Editor ermöglicht das visuelle Erstellen und Bearbeiten von Strecken-Kollisionsdaten.
+
+### Starten
+
+```bash
+python map_editor.py
+```
+
+### Steuerung
+
+| Taste | Funktion |
+|-------|----------|
+| **Q / E** | Textur wechseln (vorher/nächste) |
+| **Pfeiltasten** | Karte verschieben |
+| **+ / -** | Zoom |
+| **T** | Rechteck-Typ wechseln (Strecke/Rampe/Recovery/Dash/Finish/Checkpoint) |
+| **P** | Startposition setzen (dann auf Karte klicken) |
+| **A / D** | Startwinkel drehen |
+| **L** | Bestehende Track-Kollisionsdaten laden |
+| **C** | Python-Code in Konsole ausgeben |
+| **S** | Python-Code in Datei speichern |
+| **N** | Alles löschen (Rechtecke + Startposition) |
+| **ESC** | Beenden |
+
+### Maus
+
+| Aktion | Funktion |
+|--------|----------|
+| **Linksklick + Ziehen** | Neues Rechteck zeichnen |
+| **Rechtsklick** | Rechteck löschen |
+| **Mittelklick + Ziehen** | Karte bewegen |
+| **Mausrad** | Zoom |
+
+### Workflow: Neue Strecke erstellen
+
+1. Erstelle eine PNG-Textur (4000x2000 Pixel) und lege sie in `gfx/`
+2. Starte den Map Editor und wähle die Textur mit Q/E
+3. Zeichne die Strecken-Rechtecke (Typ: Strecke)
+4. Füge Ziellinie, Checkpoints, Rampen etc. hinzu
+5. Setze die Startposition mit **P** + Klick und drehe den Winkel mit **A/D**
+6. Drücke **C** um den Code zu sehen oder **S** um ihn zu speichern
+7. Kopiere den Code in `settings/track_settings.py` als neue Track-Funktion
+8. Kopiere die Startposition (`init_player_pos_x/y/angle`) in `settings/league_settings.py`
+9. Aktualisiere die Track-Namen in `menu.py`
+
+### Rechteck-Typen
+
+| Typ | Farbe | Beschreibung |
+|-----|-------|--------------|
+| Strecke | Grün | Fahrbare Fläche |
+| Rampe | Gelb | Sprungschanze |
+| Recovery | Cyan | Heilzone (regeneriert Energie) |
+| Dash Plate | Magenta | Speed-Booster |
+| Ziellinie | Rot | Start/Ziel |
+| Checkpoint | Blau | Muss passiert werden für gültige Runde |
+
+### Startposition
+
+Die Startposition wird als oranger Pfeil angezeigt und zeigt Position und Blickrichtung des Spielers beim Rennstart.
+
+- **P** drücken, dann auf die Karte klicken um die Position zu setzen
+- **A/D** um den Startwinkel zu drehen
+- Der generierte Code enthält `init_player_pos_x`, `init_player_pos_y` und `init_player_angle`
+
 ## Installationsanweisungen
 
-1. Installiere Python Version 3.10 auf deinem Computer (https://www.python.org/downloads/release/python-31011/). In diesem Projekt wurde Python 3.10.10 verwendet. Beachte, dass die Skripte des Projekts NICHT mit dem Python 3.11 Interpreter laufen, da nicht alle Abhängigkeiten mit Python 3.11 funktionieren.
-2. Installiere pygame 2.2.0. Wenn du pip zur Verwaltung deiner Python-Pakete verwendest, kann dies durch Ausführen des Befehls `pip install pygame==2.2.0` erfolgen.
-3. Zur Leistungsoptimierung und um den Mode7-Renderer in Echtzeit ausführen zu können, verwendet diese Implementierung den Python Just-in-Time-Compiler numba (https://numba.pydata.org/), der numerische Funktionen zur Laufzeit in Maschinencode kompiliert, um ihre Ausführung erheblich zu beschleunigen.
-Für diese Implementierung wurde numba Version 0.56.4 verwendet, die du über pip installieren kannst, indem du den Befehl `pip install numba==0.56.4` ausführst.
-Hinweis: numba funktioniert noch nicht mit Python 3.11 (Stand: 1. Mai 2023).
-4. Klone dieses Repository auf deinen Computer mit `git clone`.
-5. Navigiere zum Hauptordner dieses Repositories und führe das Skript `main.py` mit dem Python-Interpreter aus.
+1. Installiere Python Version 3.10+ auf deinem Computer (https://www.python.org/downloads/)
+2. Installiere pygame: `pip install pygame`
+3. Installiere numba für Performance-Optimierung: `pip install numba`
+4. Klone dieses Repository: `git clone`
+5. Starte das Spiel: `python main.py`
 
 ## Test-Build
 
 Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mode7-racer, der 4 aufeinanderfolgende Rennen bietet.
 
-## Steuerung (dieser Fork)
+## Steuerung (Spiel)
 
-- **Pfeil Links/Rechts**: Lenken
-- **Pfeil Hoch**: Beschleunigen
-- **Pfeil Runter**: Bremsen
-- **Leertaste**: Booster verwenden (freigeschaltet nach Abschluss einer Runde)
-- **R**: Rennen neu starten (Debug)
+| Taste | Funktion |
+|-------|----------|
+| **Pfeil Links/Rechts** | Lenken |
+| **Pfeil Hoch** | Beschleunigen |
+| **Pfeil Runter** | Bremsen |
+| **Leertaste** | Booster verwenden (nach 1 Runde freigeschaltet) |
+| **R** | Rennen neu starten |
 
 Jedes Rennen erfordert 3 Runden zum Abschluss.
 Nach Abschluss eines Rennens drücke Leertaste, um zum nächsten zu springen.

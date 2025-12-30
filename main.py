@@ -10,6 +10,7 @@ from settings.renderer_settings import *
 from settings.track_settings import *
 from settings.ui_settings import *
 from settings.ui_settings import GAME_OVER_OVERLAY_ALPHA, GAME_OVER_IMAGE, PRESS_SPACE_IMAGE
+from settings.ui_settings import FINISH_OVERLAY_ALPHA, get_pixel_font
 from settings.key_settings import STD_CONFIRM_KEY, STD_DEBUG_RESTART_KEY
 from settings.league_settings import *
 from settings.music_settings import *
@@ -24,6 +25,7 @@ from league import League
 from settings.track_settings import TrackCreator
 from ui import UI
 from menu import Menu
+from highscores import HighscoreManager
 
 # Nur für Debug-Importe
 from collision import CollisionRect
@@ -55,6 +57,12 @@ class App:
         # Initialisiert das Modul, das für das Abspielen von Sounds verantwortlich ist
         mixer.init()
         mixer.music.set_volume(MUSIC_VOLUME)
+
+        # Highscore-Manager initialisieren
+        self.highscore_manager = HighscoreManager()
+
+        # Rekord-Infos für aktuelles Rennen (wird nach Rennende gesetzt)
+        self.current_race_record_info = None
 
         # ------------- Ende der allgemeinen Initialisierung -------------
 
@@ -112,9 +120,9 @@ class App:
         # ------------- Ende der Streckenauswahl -------------
 
         # Rennmodus initialisieren und Rennen laden.
-        # Wir nutzen aus, dass ein Einzelrennen als League-Objekt betrachtet werden kann,
-        # dessen Rennliste nur ein Rennen enthält.
-        self.current_league = League( [SINGLE_MODE_RACES[race_choice]] )
+        # Liga mit allen verfügbaren Rennen erstellen, aber beim ausgewählten Rennen starten
+        self.current_league = League(SINGLE_MODE_RACES)
+        self.current_league.current_race_index = race_choice
         self.init_race_mode(next_race = self.current_league.current_race())
         
     # Enthält allgemeine (Neu-)Initialisierungslogik für jeden Spielmodus,
@@ -209,13 +217,14 @@ class App:
             timer_sprites = self.timer_sprites
         )
 
-        # Initialen Zeitstempel nehmen, der
-        # für den Timer verwendet wird, der die Zeit seit Rennstart verfolgt.
-        # Muss die Methode get_time verwenden, da das Feld self.time zu diesem Zeitpunkt nicht initialisiert ist.
-        self.race_start_timestamp = self.time
-
         # Status-Flag setzen
         self.in_racing_mode = True
+
+        # Rundenzeit-Anzeige (zeigt die letzte Rundenzeit für einige Sekunden an)
+        self.last_lap_time_display = None
+        self.lap_time_display_timestamp = None
+        self.LAP_TIME_DISPLAY_DURATION = 4.0  # Sekunden
+        self.previous_lap_count = 0  # Um zu erkennen, wann eine neue Runde abgeschlossen wurde
 
         # Nächste Rennstrecke laden
         self.load_race(next_race)
@@ -240,21 +249,54 @@ class App:
 
             # Timer in der UI aktualisieren, wenn der Spieler das aktuelle Rennen noch nicht beendet hat
             # und nicht zerstört wurde (Game Over).
+            # Timer startet erst, wenn das Rennen begonnen hat (erste Ziellinie überquert).
             if not self.player.finished and not self.player.destroyed:
-                seconds_since_race_start = self.time - self.race_start_timestamp
-                self.ui.update(
-                    elapsed_milliseconds = seconds_since_race_start * 1000
-                )
+                current_race = self.current_league.current_race()
+                if current_race.race_started:
+                    seconds_since_race_start = self.time - current_race.race_start_timestamp
+                    self.ui.update(
+                        elapsed_milliseconds = seconds_since_race_start * 1000
+                    )
+                else:
+                    # Timer bleibt auf 0, bis das Rennen startet
+                    self.ui.update(elapsed_milliseconds = 0)
+
+            # Prüft, ob eine neue Runde abgeschlossen wurde
+            current_race = self.current_league.current_race()
+            current_lap_count = current_race.player_completed_laps
+            if current_lap_count > self.previous_lap_count and len(current_race.lap_times) > 0:
+                # Neue Runde abgeschlossen! Zeige die Rundenzeit an
+                self.last_lap_time_display = current_race.lap_times[-1]  # Letzte Rundenzeit
+                self.lap_time_display_timestamp = self.time
+                self.previous_lap_count = current_lap_count
 
             # Prüft, ob der Spieler das Rennen beendet hat.
             # Wenn ja, wird ein Status-Flag in der Spielerinstanz gesetzt, falls noch nicht geschehen.
             if self.current_league.current_race().player_finished_race() and not self.player.finished:
                 self.player.finished = True
+                # Füge die Gesamtzeit des abgeschlossenen Rennens zur Liga-Gesamtzeit hinzu
+                race_total_time = sum(self.current_league.current_race().lap_times)
+                self.current_league.add_race_time(race_total_time)
+
+                # Highscores aktualisieren
+                current_race = self.current_league.current_race()
+                self.current_race_record_info = self.highscore_manager.update_highscores(
+                    track_name=current_race.race_track.name,
+                    lap_times=current_race.lap_times
+                )
 
             # Nächstes Rennen laden, wenn der Spieler das aktuelle beendet hat und die Bestätigungstaste gedrückt hat (was das Flag setzt)
             if self.should_load_next_race:
                 self.player.finished = False
-                self.load_race(self.current_league.next_race())
+                # Prüfen, ob es noch ein nächstes Rennen gibt
+                if self.current_league.current_race_index + 1 < self.current_league.length():
+                    # Nächstes Rennen laden
+                    self.load_race(self.current_league.next_race())
+                else:
+                    # Liga ist beendet - zurück zum ersten Rennen
+                    print(f"Liga abgeschlossen! Finale Gesamtzeit: {self.current_league.total_time_ms:.0f}ms")
+                    self.current_league.reset()
+                    self.load_race(self.current_league.current_race())
 
             # Prüft, ob der Spieler mindestens eine Runde absolviert hat
             # und aktiviert seine Boost-Kraft, falls ja (und noch nicht aktiviert).
@@ -294,12 +336,17 @@ class App:
             is_foggy = race.is_foggy
         )
 
-        # Timer zurücksetzen
-        self.race_start_timestamp = self.time
-
         # Musik neu starten
         mixer.music.load(race.music_track_path)
         mixer.music.play()
+
+        # Rundenzeit-Anzeige zurücksetzen
+        self.last_lap_time_display = None
+        self.lap_time_display_timestamp = None
+        self.previous_lap_count = 0
+
+        # Rekord-Infos zurücksetzen
+        self.current_race_record_info = None
 
         # Flag zurücksetzen
         self.should_load_next_race = False
@@ -324,6 +371,10 @@ class App:
         # Zeichnet UI-Sprites auf den Bildschirm
         self.ui_sprites.draw(self.screen)
 
+        # Zeichnet Rundenzeit-Benachrichtigung (falls aktiv)
+        if self.in_racing_mode:
+            self.draw_lap_time_notification()
+
         # Zeichnet Debug-Objekte wie Energieleiste
         if self.in_racing_mode:
             self.draw_racing_mode_debug_objects()
@@ -331,6 +382,10 @@ class App:
         # Game Over Overlay zeichnen wenn Spieler zerstört wurde
         if self.in_racing_mode and self.player.destroyed:
             self.draw_game_over_overlay()
+
+        # Finish Screen Overlay zeichnen wenn Spieler das Rennen beendet hat
+        if self.in_racing_mode and self.player.finished:
+            self.draw_race_finished_overlay()
 
         # Inhalt der gesamten Anzeige aktualisieren
         pygame.display.flip()
@@ -420,6 +475,104 @@ class App:
         # "PRESS SPACE" Sprite zentriert darunter
         press_space_rect = PRESS_SPACE_IMAGE.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 30))
         self.screen.blit(PRESS_SPACE_IMAGE, press_space_rect)
+
+    # Zeichnet das Finish Screen Overlay wenn der Spieler das Rennen beendet hat
+    def draw_race_finished_overlay(self):
+        # Fonts (kleinere Größen)
+        title_font = get_pixel_font(int(36 * RENDER_SCALE))
+        text_font = get_pixel_font(int(20 * RENDER_SCALE))
+        small_font = get_pixel_font(int(16 * RENDER_SCALE))
+        tiny_font = get_pixel_font(int(14 * RENDER_SCALE))
+
+        # "RACE FINISHED!" Titel
+        title_text = title_font.render("RACE FINISHED!", True, (255, 255, 100))
+        title_rect = title_text.get_rect(center=(WIDTH // 2, int(HEIGHT * 0.3)))
+        self.screen.blit(title_text, title_rect)
+
+        # Gesamtzeit
+        current_race = self.current_league.current_race()
+        y_offset = int(HEIGHT * 0.42)
+
+        total_time = sum(current_race.lap_times)
+        total_text = text_font.render(
+            f"TOTAL: {self.format_time(total_time)}",
+            True, (100, 255, 100)
+        )
+        total_rect = total_text.get_rect(center=(WIDTH // 2, y_offset))
+        self.screen.blit(total_text, total_rect)
+
+        # Best Lap anzeigen (falls vorhanden)
+        if self.current_race_record_info:
+            y_offset += 30 * RENDER_SCALE
+            best_lap = self.current_race_record_info["best_lap"]
+
+            if best_lap:
+                best_lap_text = small_font.render(
+                    f"Best Lap: {self.format_time(best_lap)}",
+                    True, (150, 150, 200)
+                )
+                best_lap_rect = best_lap_text.get_rect(center=(WIDTH // 2, y_offset))
+                self.screen.blit(best_lap_text, best_lap_rect)
+
+        # Optionen
+        y_offset = HEIGHT - int(HEIGHT * 0.15)
+        option1 = tiny_font.render("SPACE: Next Race", True, (200, 200, 200))
+        option1_rect = option1.get_rect(center=(WIDTH // 2, y_offset))
+        self.screen.blit(option1, option1_rect)
+
+        option2 = tiny_font.render("R: Restart", True, (200, 200, 200))
+        option2_rect = option2.get_rect(center=(WIDTH // 2, y_offset + 18 * RENDER_SCALE))
+        self.screen.blit(option2, option2_rect)
+
+    # Hilfsfunktion zum Formatieren von Zeit in Millisekunden zu MM:SS.mmm
+    def format_time(self, time_ms):
+        """Formatiert Millisekunden zu MM:SS.mmm"""
+        total_seconds = int(time_ms // 1000)
+        milliseconds = int(time_ms % 1000)
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+
+    # Zeichnet die Rundenzeit-Anzeige nach Abschluss einer Runde
+    def draw_lap_time_notification(self):
+        """Zeigt die Rundenzeit für einige Sekunden nach Abschluss einer Runde an"""
+        # Nicht anzeigen, wenn das Rennen beendet ist
+        if self.player.finished:
+            return
+
+        if self.last_lap_time_display is None or self.lap_time_display_timestamp is None:
+            return
+
+        # Prüfen, ob die Anzeigedauer abgelaufen ist
+        elapsed = self.time - self.lap_time_display_timestamp
+        if elapsed > self.LAP_TIME_DISPLAY_DURATION:
+            self.last_lap_time_display = None
+            self.lap_time_display_timestamp = None
+            return
+
+        # Fade-out-Effekt in den letzten 1.5 Sekunden
+        alpha = 255
+        if elapsed > self.LAP_TIME_DISPLAY_DURATION - 1.5:
+            fade_progress = (self.LAP_TIME_DISPLAY_DURATION - elapsed) / 1.5
+            alpha = int(255 * fade_progress)
+
+        # Text-Rendering (OHNE Hintergrund)
+        y_position = int(HEIGHT * 0.12)
+
+        title_font = get_pixel_font(int(20 * RENDER_SCALE))
+        time_font = get_pixel_font(int(32 * RENDER_SCALE))
+
+        # "LAP TIME" Text
+        lap_text = title_font.render("LAP TIME", True, (200, 200, 255))
+        lap_text.set_alpha(alpha)
+        lap_rect = lap_text.get_rect(center=(WIDTH // 2, y_position))
+        self.screen.blit(lap_text, lap_rect)
+
+        # Zeit
+        time_text = time_font.render(self.format_time(self.last_lap_time_display), True, (100, 255, 100))
+        time_text.set_alpha(alpha)
+        time_rect = time_text.get_rect(center=(WIDTH // 2, y_position + 30 * RENDER_SCALE))
+        self.screen.blit(time_text, time_rect)
 
 # Ausführung der Spielschleife, wenn als Skript ausgeführt.
 if __name__ == '__main__':

@@ -59,6 +59,21 @@ GAME_OVER_OVERLAY_ALPHA = 180  # Transparenz des dunklen Overlays (0-255)
 GAME_OVER_IMAGE = load_scaled_ui_image('gfx/ui/game_over.png')
 PRESS_SPACE_IMAGE = load_scaled_ui_image('gfx/ui/press_space.png')
 
+# Finish Screen Einstellungen
+FINISH_OVERLAY_ALPHA = 200  # Transparenz des dunklen Overlays (0-255)
+
+# Font für Text-Rendering (wird beim ersten Gebrauch initialisiert)
+_font_cache = {}
+def get_pixel_font(size):
+    """Gibt einen Pixel-Style Font zurück (gecached)"""
+    if size not in _font_cache:
+        # Versuche einen Pixel-Font zu laden, fallback zu Default
+        try:
+            _font_cache[size] = pygame.font.Font(None, size)
+        except:
+            _font_cache[size] = pygame.font.SysFont('courier', size)
+    return _font_cache[size]
+
 # Standardpfade für die im Spiel verwendeten Zahlen-Sprites
 NUMBER_IMAGES = [ # Index = dargestellte Zahl
     load_scaled_ui_image('gfx/numbers/small_numbers0.png'),

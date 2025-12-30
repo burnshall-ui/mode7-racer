@@ -55,18 +55,10 @@ class Menu:
         self.selected_index = 0
         self.selected_race = 0
 
-        # Track-Namen (aus den Rennen extrahieren)
+        # Track-Namen (nur funktionierende Strecken)
         self.track_names = [
-            "Event Horizon I",
-            "City Circuit",
-            "City Circuit II",
-            "Event Horizon II",
-            "Snow Circuit",
-            "Desert Track",
-            "Monochrome Track",
-            "Black Hole Circuit",
-            "Space Hangar",
-            "Speed Oval"
+            "Funktioniert1",
+            "Event Horizon I"
         ]
 
     def run(self):

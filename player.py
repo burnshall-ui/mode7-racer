@@ -100,7 +100,7 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # Rundenzähler aktualisieren.
         # Dafür benötigt das Streckenobjekt die aktuelle Position des Spielers.
-        self.current_race.update_lap_count(current_collision_rect)
+        self.current_race.update_lap_count(current_collision_rect, time)
 
         # Spieler boosten lassen, wenn auf Dash-Plate.
         # Über eine Dash-Plate springen führt natürlich nicht zu einem Boost.

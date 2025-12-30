@@ -24,8 +24,7 @@ OBSTACLE_HIT_SPEED_RETENTION = 0.5 # Prozentsatz der Geschwindigkeit, den die Sp
 MIN_BOUNCE_BACK_FORCE = 0.005 # Minimale Kraft, die in entgegengesetzter Richtung angewendet wird, wenn der Spieler gegen eine Wand prallt (um zu verhindern, dass der Spieler knapp außerhalb der Streckengrenzen stecken bleibt)
 
 # Geschwindigkeits-Skalierung (1.0 = Original, 0.8 = 80%)
-# Auf 1.1 erhöht für gutes Speed-Gefühl (sweet spot!)
-SPEED_SCALE = 1.1
+SPEED_SCALE = 1.0
 
 # Referenzwerte für Maschinen-Statistiken
 PURPLE_COMET_ACCELERATION = (5000 / 750) * SPEED_SCALE

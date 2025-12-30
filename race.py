@@ -19,6 +19,14 @@ class Race:
         self.player_completed_laps = 0
         self.required_laps = required_laps
 
+        # Flag für Rennstart (wird beim ersten Ziellinienkontakt auf True gesetzt)
+        self.race_started = False
+        self.race_start_timestamp = None
+
+        # Rundenzeiten (in Millisekunden)
+        self.lap_times = []
+        self.last_lap_timestamp = None
+
         # Initiale Spielerposition und Rotation
         self.init_player_pos_x = init_player_pos_x
         self.init_player_pos_y = init_player_pos_y
@@ -46,26 +54,54 @@ class Race:
     # Prüft dann, ob der Spieler die Ziellinie überquert hat.
     # Wenn ja, werden alle Schlüssel-Checkpoints zurückgesetzt, nachdem geprüft wurde, ob der Spieler alle passiert hat
     # (wenn ja, wird dem Spieler eine abgeschlossene Runde gutgeschrieben).
-    def update_lap_count(self, player_coll):
+    #
+    # Parameter:
+    # player_coll - Kollisionsrechteck des Spielers
+    # current_time - Aktueller Zeitstempel (wird benötigt, um den Rennstart-Zeitstempel zu setzen)
+    #
+    # Rückgabewert: True wenn das Rennen in diesem Frame gestartet wurde, sonst False
+    def update_lap_count(self, player_coll, current_time):
         self.race_track.update_key_checkpoints(player_coll)
+
+        race_just_started = False
 
         # Wenn Spieler die Ziellinie überquert hat
         if self.race_track.is_on_finish_line(player_coll):
+            # Rennen beim ersten Ziellinienkontakt starten
+            if not self.race_started:
+                self.race_started = True
+                self.race_start_timestamp = current_time
+                self.last_lap_timestamp = current_time
+                race_just_started = True
+                print("Rennen gestartet!")
+
             # Wenn Spieler ehrlich eine Runde beendet hat
             if self.race_track.all_key_checkpoints_passed():
+                # Rundenzeit berechnen und speichern
+                lap_time_ms = (current_time - self.last_lap_timestamp) * 1000
+                self.lap_times.append(lap_time_ms)
+                self.last_lap_timestamp = current_time
+
                 # Abgeschlossene Runden erhöhen.
                 # Wenn Spieler genug Runden abgeschlossen hat, Finish-Sequenz initialisieren.
                 self.player_completed_laps += 1
-                print(str(self.player_completed_laps) + " Runden abgeschlossen!")
+                print(f"{self.player_completed_laps} Runden abgeschlossen! Rundenzeit: {lap_time_ms:.0f}ms")
 
                 if self.player_finished_race():
-                    print("Rennen beendet!")
+                    total_time_ms = sum(self.lap_times)
+                    print(f"Rennen beendet! Gesamtzeit: {total_time_ms:.0f}ms")
             self.race_track.reset_key_checkpoints()
+
+        return race_just_started
 
     # Startet das Rennen neu und setzt alle Renndaten auf ihre initialen Werte zurück.
     # Z.B. abgeschlossene Runden des Spielers, passierte Schlüssel-Checkpoints, ...
     def reset_data(self):
         self.player_completed_laps = 0
+        self.race_started = False
+        self.race_start_timestamp = None
+        self.lap_times = []
+        self.last_lap_timestamp = None
         self.race_track.reset_key_checkpoints()
 
     # ------------- Verfügbarmachung der RaceTrack-API ---------------------

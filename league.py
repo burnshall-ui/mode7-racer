@@ -4,6 +4,7 @@ class League:
     def __init__(self, races):
         self.races = races
         self.current_race_index = 0 # Index des Rennens, das der Spieler derzeit fährt
+        self.total_time_ms = 0 # Gesamtzeit über alle abgeschlossenen Rennen (in Millisekunden)
 
     # Gibt die Anzahl der Rennen zurück, aus denen diese Liga besteht.
     def length(self):
@@ -25,3 +26,10 @@ class League:
     # Setzt den Index auf das erste Rennen der Liga zurück.
     def reset(self):
         self.current_race_index = 0
+        self.total_time_ms = 0
+
+    # Fügt die Gesamtzeit eines abgeschlossenen Rennens zur Liga-Gesamtzeit hinzu.
+    # Sollte aufgerufen werden, wenn ein Rennen beendet wurde.
+    def add_race_time(self, race_time_ms):
+        self.total_time_ms += race_time_ms
+        print(f"Liga-Gesamtzeit: {self.total_time_ms:.0f}ms")
