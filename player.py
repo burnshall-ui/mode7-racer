@@ -79,6 +79,12 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         self.last_boost_started_timestamp = None # Zeitstempel, wann der Spieler zuletzt einen Boost gestartet hat
         self.has_boost_power = False # ob der Spieler seinen Booster verwenden darf (während der ersten Runde auf False gesetzt, wechselt nach Abschluss der ersten Runde auf True)
 
+        # Bobbing-Effekt: Leichtes Auf-und-Ab beim Fahren (wie in F-Zero)
+        self.bob_phase = 0.0  # Aktuelle Phase der Bobbing-Animation
+
+        # Kurvenneigung: Schiff kippt beim Lenken (wie in F-Zero)
+        self.tilt_angle = 0.0  # Aktueller Neigungswinkel in Grad
+
     # Aktualisiert Spielerdaten und Position.
     # 
     # Parameter:
@@ -127,9 +133,55 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             if self.current_energy > self.machine.max_energy:
                 self.current_energy = self.machine.max_energy
 
+        # Spieler verlangsamen, wenn auf Dirt-Zone.
+        # Über Dirt springen hat keinen Effekt.
+        if self.current_race.is_on_dirt(current_collision_rect) and not self.jumping:
+            # Damping-Effekt: Geschwindigkeit wird pro Frame reduziert
+            DIRT_DAMPING = 0.98  # Behält 98% der Geschwindigkeit pro Frame (sanfter)
+            DIRT_MAX_SPEED_FACTOR = 0.9  # Maximal 90% der normalen Höchstgeschwindigkeit auf Dirt
+
+            self.current_speed *= DIRT_DAMPING
+
+            # Zusätzlich: Höchstgeschwindigkeit auf Dirt begrenzen
+            dirt_max_speed = self.machine.max_speed * DIRT_MAX_SPEED_FACTOR
+            if self.current_speed > dirt_max_speed:
+                self.current_speed = dirt_max_speed
+
         # Aktuelle Animation des Spielers vorrücken und Bild des Spieler-Sprites aktualisieren
         self.advance_current_animation(delta)
         self.image = self.current_frame()
+
+        # TODO: Kurvenneigung mit echten Sprites einbauen
+        # Benötigt: violet_machine_left0001-0004.png und violet_machine_right0001-0004.png
+
+        # Bobbing-Effekt: Leichtes Auf-und-Ab beim Fahren (wie in F-Zero)
+        # Nur wenn nicht springend, Geschwindigkeit > 0 und NICHT am Lenken
+        # (beim Lenken neigt sich das Schiff stattdessen)
+        is_steering = self.steering_left or self.steering_right
+        if not self.jumping and self.current_speed > 0 and not is_steering:
+            # Bobbing-Parameter
+            BOB_SPEED = 12.0  # Wie schnell das Schiff bobt (höher = schneller)
+            BOB_AMPLITUDE = 2.0 * RENDER_SCALE  # Maximale Auf-/Ab-Bewegung in Pixeln
+
+            # Phase voranschreiten (schneller bei höherer Geschwindigkeit)
+            speed_factor = min(1.0, self.current_speed / self.machine.max_speed)
+            self.bob_phase += BOB_SPEED * delta * speed_factor
+
+            # Sinusförmige Bewegung berechnen
+            bob_offset = numpy.sin(self.bob_phase) * BOB_AMPLITUDE * speed_factor
+
+            # Y-Position anpassen
+            self.rect.topleft = [
+                NORMAL_ON_SCREEN_PLAYER_POSITION_X,
+                NORMAL_ON_SCREEN_PLAYER_POSITION_Y + bob_offset
+            ]
+        elif not self.jumping:
+            # Wenn nicht springend und keine Geschwindigkeit oder am Lenken: normale Position
+            # (später hier: Neigung beim Kurvenfahren einbauen)
+            self.rect.topleft = [
+                NORMAL_ON_SCREEN_PLAYER_POSITION_X,
+                NORMAL_ON_SCREEN_PLAYER_POSITION_Y
+            ]
 
 
     # Bewegt und rotiert die Kamera frei basierend auf Spielereingaben.
@@ -495,6 +547,8 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         self.has_boost_power = False
         self.steering_left = False
         self.steering_right = False
+        self.bob_phase = 0.0  # Bobbing-Phase zurücksetzen
+        self.tilt_angle = 0.0  # Neigungswinkel zurücksetzen
 
         # Bildschirmposition zurücksetzen
         self.rect.topleft = [

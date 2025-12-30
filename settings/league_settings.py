@@ -12,7 +12,7 @@ LEAGUE_1_RACES = [
     Race( # 0: Funktioniert1 - Erste selbst erstellte Strecke
         race_track_creator = TrackCreator.create_funktioniert1,
         floor_tex_path = "gfx/new_track.png",
-        bg_tex_path = "gfx/event_horizon_bg.png",
+        bg_tex_path = "gfx/track_2023_snow_bg.png",
         required_laps = STD_REQUIRED_LAPS,
         race_mode = "time_attack",
         init_player_pos_x = 77.88,

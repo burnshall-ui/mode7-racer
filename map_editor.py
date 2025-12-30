@@ -48,6 +48,7 @@ RECT_TYPES = [
     ("ramp", "Rampe", (255, 255, 0)),
     ("recovery", "Recovery", (0, 255, 255)),
     ("dash", "Dash Plate", (255, 0, 255)),
+    ("dirt", "Dirt", (139, 90, 43)),  # Braun - verlangsamt den Spieler
     ("finish", "Ziellinie", (255, 0, 0)),
     ("checkpoint", "Checkpoint", (0, 100, 255)),
 ]
@@ -359,11 +360,12 @@ class Editor:
             'ramp': '# ========== RAMPEN (ramp_rects) ==========',
             'recovery': '# ========== RECOVERY ZONES (recovery_rects) ==========',
             'dash': '# ========== DASH PLATES (dash_plate_rects) ==========',
+            'dirt': '# ========== DIRT ZONES (dirt_rects) ==========',
             'finish': '# ========== ZIELLINIE (finish_line_collider) ==========',
             'checkpoint': '# ========== CHECKPOINTS (key_checkpoint_rects) ==========',
         }
 
-        for rect_type in ['track', 'ramp', 'recovery', 'dash', 'finish', 'checkpoint']:
+        for rect_type in ['track', 'ramp', 'recovery', 'dash', 'dirt', 'finish', 'checkpoint']:
             if rect_type in by_type:
                 code_lines.append(type_comments.get(rect_type, f'# {rect_type}'))
                 for i, rect in enumerate(by_type[rect_type]):

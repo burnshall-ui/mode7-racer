@@ -118,6 +118,9 @@ class Race:
     def is_on_ramp(self, other):
         return self.race_track.is_on_ramp(other)
 
+    def is_on_dirt(self, other):
+        return self.race_track.is_on_dirt(other)
+
     def guard_rails_active(self):
         return self.race_track.guard_rails_active()
 

@@ -631,6 +631,13 @@ class TrackCreator:
             h = 1.67
         )
 
+        # ========== DIRT ZONES ==========
+        dirt_1 = CollisionRect(
+            pos = numpy.array([48.28, -159.48]),
+            w = 11.33,
+            h = 4.66
+        )
+
         # ========== ZIELLINIE ==========
         finish_1 = CollisionRect(
             pos = numpy.array([77.50, -141.75]),
@@ -662,5 +669,6 @@ class TrackCreator:
             finish_line_collider = finish_1,
             dash_plate_rects = [dash_1, dash_2],
             recovery_rects = [recovery_1],
-            has_guard_rails = True
+            has_guard_rails = True,
+            dirt_rects = [dirt_1]
         )

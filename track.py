@@ -5,12 +5,12 @@
 # Parameter floor_texture_path und bg_texture_path sind die Pfade zu den Texturen für die Strecke und den Planeten
 # sowie für den Skybox-ähnlichen Hintergrund.
 class Track:
-    def __init__(self, name, track_surface_rects, key_checkpoint_rects, ramp_rects, finish_line_collider, 
-            dash_plate_rects, recovery_rects, has_guard_rails):
+    def __init__(self, name, track_surface_rects, key_checkpoint_rects, ramp_rects, finish_line_collider,
+            dash_plate_rects, recovery_rects, has_guard_rails, dirt_rects=None):
         self.name = name
 
         self.track_surface_rects = track_surface_rects
-        
+
         self.key_checkpoints = [KeyCheckpoint(kc_rect) for kc_rect in key_checkpoint_rects]
 
         self.ramp_rects = ramp_rects
@@ -20,6 +20,9 @@ class Track:
         self.dash_plate_rects = dash_plate_rects
 
         self.recovery_zone_rects = recovery_rects
+
+        # Dirt-Zonen verlangsamen den Spieler (Damping-Effekt)
+        self.dirt_rects = dirt_rects if dirt_rects is not None else []
 
         # Flag, das bestimmt, ob die Strecke feste Grenzen hat oder nicht
         # (im letzteren Fall fällt der Spieler einfach von der Strecke)
@@ -63,6 +66,14 @@ class Track:
     # other (CollisionRect)
     def is_on_ramp(self, other):
         return collides_with_list(self.ramp_rects, other)
+
+    # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck auf einer Dirt-Zone ist.
+    # Dirt-Zonen verlangsamen den Spieler (Damping-Effekt).
+    #
+    # Parameter:
+    # other (CollisionRect)
+    def is_on_dirt(self, other):
+        return collides_with_list(self.dirt_rects, other)
 
     # Bestimmt, ob das übergebene rechteckige Kollisionsrechteck auf der Ziellinie ist oder nicht.
     #

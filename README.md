@@ -37,6 +37,9 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
 - SNES-Style Game Over Bildschirm
 - Rückwärtssprung-Bug behoben
 - **Map Editor** zum visuellen Erstellen von Strecken-Kollisionen
+- **Bobbing-Effekt** beim Fahren (F-Zero-Style Auf-und-Ab)
+- **Dirt-Zonen** als neues Streckenelement (verlangsamt den Spieler)
+- Verbesserte Sprungphysik (kürzere, präzisere Sprünge)
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
@@ -101,6 +104,7 @@ python map_editor.py
 | Rampe | Gelb | Sprungschanze |
 | Recovery | Cyan | Heilzone (regeneriert Energie) |
 | Dash Plate | Magenta | Speed-Booster |
+| Dirt | Braun | Verlangsamungszone (Damping-Effekt) |
 | Ziellinie | Rot | Start/Ziel |
 | Checkpoint | Blau | Muss passiert werden für gültige Runde |
 
