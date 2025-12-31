@@ -29,6 +29,8 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
   - Navigation-Sounds beim Blättern
   - Bestätigungs-Sound bei Auswahl
   - Animierte Pfeile von beiden Seiten (SNES-Style)
+- **Mini-Map (unten links)**: Statische Streckenübersicht mit Spielerpunkt
+  - Optional pro Strecke eigenes Minimap-Bild (siehe Abschnitt „Mini-Map“ unten)
 - **Pause-Menü** (ESC während des Rennens) mit Continue/Restart/Quit
 - Menü-Musik mit angepasster Lautstärke
 - Höhere Auflösung mit dynamischem Skalierungssystem
@@ -151,3 +153,14 @@ Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mo
 Jedes Rennen erfordert 3 Runden zum Abschluss.
 Nach Abschluss eines Rennens drücke Leertaste, um zum nächsten zu springen.
 Wenn deine Energie auf null sinkt, drücke Leertaste zum Neustart.
+
+## Mini-Map
+
+Während eines Rennens wird unten links eine **statische Mini-Map** angezeigt.
+
+- **Eigene Mini-Map pro Strecke (empfohlen)**:
+  - Lege ein Bild unter `gfx/ui/minimaps/` ab.
+  - Namenskonvention: `gfx/ui/minimaps/<floor_texture_basename>_minimap.png`
+  - Beispiel: `gfx/event_horizon_track2.png` → `gfx/ui/minimaps/event_horizon_track2_minimap.png`
+- **Fallback**: Wenn kein Bild vorhanden ist, rendert das Spiel eine einfache Mini-Map aus den Kollisions-Rechtecken.
+- **Konfiguration**: Siehe `settings/ui_settings.py` (z.B. `MINIMAP_ENABLED`, Skalierung/Größe, Marker-Verhalten).

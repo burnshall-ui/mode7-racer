@@ -87,3 +87,65 @@ NUMBER_IMAGES = [ # Index = dargestellte Zahl
     load_scaled_ui_image('gfx/numbers/small_numbers8.png'),
     load_scaled_ui_image('gfx/numbers/small_numbers9.png'),
 ]
+
+# ---------------- Mini-Map (unten links) ----------------
+#
+# Idee: Du kannst pro Strecke eine kleine Minimap als Bild zeichnen.
+# Konvention (Standard):
+# - `gfx/ui/minimaps/<floor_texture_basename>_minimap.png`
+#   Beispiel: Floor-Textur `gfx/event_horizon_track2.png` -> `gfx/ui/minimaps/event_horizon_track2_minimap.png`
+#
+# Wenn kein Bild gefunden wird, rendert das Spiel eine einfache Fallback-Minimap aus den Kollisions-Rechtecken.
+
+MINIMAP_ENABLED = True
+
+# Abstand der Minimap zum Bildschirmrand
+MINIMAP_MARGIN_LEFT = int(8 * RENDER_SCALE)
+MINIMAP_MARGIN_BOTTOM = int(8 * RENDER_SCALE)
+
+# Falls kein Minimap-Bild existiert: diese Größe wird verwendet
+MINIMAP_FALLBACK_SIZE = (int(64 * RENDER_SCALE), int(64 * RENDER_SCALE))
+
+# Soll die Minimap (falls vorhanden) mit RENDER_SCALE skaliert werden?
+# - True: Zeichne Minimap einmal in Basis-Auflösung, sie skaliert automatisch mit.
+# - False: Minimap-Datei ist bereits in der finalen Pixelgröße.
+MINIMAP_SCALE_WITH_RENDER_SCALE = True
+
+# Zusätzliche Skalierung der Mini-Map bei der Anzeige
+# 1.0 = original, 0.9 = 10% kleiner
+MINIMAP_DISPLAY_SCALE = 0.81
+
+# Zusätzliche Skalierung für den Marker (Punkt + Richtung)
+# 1.0 = original, 0.9 = 10% kleiner
+MINIMAP_MARKER_SCALE = 0.9
+
+# Wenn False: kein Richtungs-Strich (nur Punkt)
+MINIMAP_SHOW_HEADING = False
+
+# Wenn True: Marker wird auf die „Mittellinie“ des aktuellen Strecken-Segments projiziert,
+# damit er keine seitlichen Abweichungen (links/rechts) darstellt, sondern primär den Fortschritt entlang der Strecke.
+MINIMAP_MARKER_CLAMP_TO_TRACK_CENTER = True
+
+# Pfad-Konvention für Minimap-Bilder
+MINIMAP_IMAGE_DIR = 'gfx/ui/minimaps'
+MINIMAP_IMAGE_SUFFIX = '_minimap'
+
+# Optional: Weltkoordinaten-Bounds leicht vergrößern (in Welt-Einheiten),
+# damit der Marker nicht am Rand „klebt“ und etwas Padding vorhanden ist.
+MINIMAP_WORLD_PADDING = 0.0
+
+# Farben/Style
+MINIMAP_BG_COLOR = (0, 0, 0)
+MINIMAP_BG_ALPHA = 0
+MINIMAP_BORDER_COLOR = (230, 230, 230)
+MINIMAP_BORDER_WIDTH = max(1, int(2 * RENDER_SCALE))
+
+MINIMAP_TRACK_COLOR = (190, 190, 190)
+MINIMAP_TRACK_ALPHA = 255
+MINIMAP_FINISH_COLOR = (255, 80, 80)
+MINIMAP_FINISH_ALPHA = 220
+
+MINIMAP_PLAYER_COLOR = (255, 240, 80)
+MINIMAP_PLAYER_OUTLINE_COLOR = (20, 20, 20)
+MINIMAP_PLAYER_RADIUS = max(2, int(2 * RENDER_SCALE))
+MINIMAP_HEADING_LENGTH = max(6, int(10 * RENDER_SCALE))

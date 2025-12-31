@@ -2,6 +2,8 @@
 import pygame, time
 from pygame import mixer # Modul zum Abspielen von Sound
 import sys
+import os
+import math
 
 # Import der Spiel-Einstellungen
 from settings.debug_settings import *
@@ -144,6 +146,10 @@ class App:
         # Deklariert den Mode-7-Renderer.
         # Wird später beim Laden des Rennens initialisiert.
         self.mode7 = None
+
+        # Mini-Map (wird beim Laden des Rennens initialisiert)
+        self.minimap_bg = None
+        self.minimap_world_bounds = None
 
         # Nur für Debug: Spieler wählt eine Maschine
         # Außerhalb des Debug-Modus verwendet der Spieler Purple Comet
@@ -356,6 +362,9 @@ class App:
             is_foggy = race.is_foggy
         )
 
+        # Mini-Map für dieses Rennen vorbereiten (einmalig)
+        self.init_minimap(race)
+
         # Musik neu starten
         mixer.music.load(race.music_track_path)
         mixer.music.play()
@@ -379,6 +388,270 @@ class App:
         self.ui_sprites = pygame.sprite.Group()
         self.particles = pygame.sprite.Group()
 
+    # ---------------- Mini-Map ----------------
+
+    def _compute_track_world_bounds(self, track):
+        """Berechnet die Welt-Bounding-Box der Strecke (x/y), basierend auf allen relevanten CollisionRects."""
+        min_x = float("inf")
+        max_x = float("-inf")
+        min_y = float("inf")
+        max_y = float("-inf")
+
+        def consume_rect(rect):
+            nonlocal min_x, max_x, min_y, max_y
+            x = float(rect.position[0])
+            y = float(rect.position[1])
+            half_w = float(rect.width) / 2.0
+            half_h = float(rect.height) / 2.0
+
+            min_x = min(min_x, x - half_w)
+            max_x = max(max_x, x + half_w)
+            min_y = min(min_y, y - half_h)
+            max_y = max(max_y, y + half_h)
+
+        # Track-Oberfläche ist Pflicht
+        for r in track.track_surface_rects:
+            consume_rect(r)
+
+        # Optional: weitere Elemente einbeziehen, damit Marker-Bounds nicht "abschneiden"
+        for r in track.ramp_rects:
+            consume_rect(r)
+        for r in track.dash_plate_rects:
+            consume_rect(r)
+        for r in track.recovery_zone_rects:
+            consume_rect(r)
+        for r in track.dirt_rects:
+            consume_rect(r)
+
+        # Ziellinie / Checkpoints
+        consume_rect(track.finish_line_collider)
+        for kc in track.key_checkpoints:
+            consume_rect(kc.collider)
+
+        # Fallback, falls irgendwas schief lief
+        if min_x == float("inf"):
+            return (0.0, 1.0, 0.0, 1.0)
+
+        # Optionales Padding
+        pad = float(MINIMAP_WORLD_PADDING)
+        return (min_x - pad, max_x + pad, min_y - pad, max_y + pad)
+
+    def _load_minimap_image(self, race):
+        """Lädt optional ein Minimap-Bild gemäß Konvention. Gibt Surface oder None zurück."""
+        base = os.path.splitext(os.path.basename(race.floor_texture_path))[0]
+        candidates = [
+            os.path.join(MINIMAP_IMAGE_DIR, f"{base}{MINIMAP_IMAGE_SUFFIX}.png"),
+            os.path.join(MINIMAP_IMAGE_DIR, f"{base}.png"),
+        ]
+
+        for path in candidates:
+            if not os.path.isfile(path):
+                continue
+
+            img = pygame.image.load(path).convert_alpha()
+
+            if MINIMAP_SCALE_WITH_RENDER_SCALE and RENDER_SCALE != 1.0:
+                new_w = int(img.get_width() * RENDER_SCALE)
+                new_h = int(img.get_height() * RENDER_SCALE)
+                if new_w > 0 and new_h > 0:
+                    img = pygame.transform.scale(img, (new_w, new_h))
+            return img
+
+        return None
+
+    def _blit_rect_with_alpha(self, surface, rect, color, alpha):
+        """Blittet ein halbtransparentes Rechteck ohne per-frame Allokationen (nur beim Init genutzt)."""
+        w = max(1, int(rect.width))
+        h = max(1, int(rect.height))
+        tmp = pygame.Surface((w, h), pygame.SRCALPHA)
+        tmp.fill((color[0], color[1], color[2], int(alpha)))
+        surface.blit(tmp, (int(rect.left), int(rect.top)))
+
+    def _render_fallback_minimap(self, track, bounds, size):
+        """Rendert eine einfache Minimap aus den Kollisions-Rechtecken (einmalig beim Laden)."""
+        w, h = int(size[0]), int(size[1])
+        w = max(1, w)
+        h = max(1, h)
+
+        bg = pygame.Surface((w, h), pygame.SRCALPHA)
+        bg.fill((MINIMAP_BG_COLOR[0], MINIMAP_BG_COLOR[1], MINIMAP_BG_COLOR[2], int(MINIMAP_BG_ALPHA)))
+
+        x_min, x_max, y_min, y_max = bounds
+        span_x = (x_max - x_min) if (x_max - x_min) != 0 else 1.0
+        span_y = (y_max - y_min) if (y_max - y_min) != 0 else 1.0
+
+        def world_rect_to_minimap_rect(rect):
+            # Minimap-x entspricht Welt-y, Minimap-y entspricht Welt-x (siehe Map-Editor / Mode7-Mapping)
+            left_y = float(rect.position[1]) - float(rect.height) / 2.0
+            right_y = float(rect.position[1]) + float(rect.height) / 2.0
+            top_x = float(rect.position[0]) - float(rect.width) / 2.0
+            bottom_x = float(rect.position[0]) + float(rect.width) / 2.0
+
+            u0 = (left_y - y_min) / span_y
+            u1 = (right_y - y_min) / span_y
+            v0 = (top_x - x_min) / span_x
+            v1 = (bottom_x - x_min) / span_x
+
+            px0 = int(u0 * (w - 1))
+            px1 = int(u1 * (w - 1))
+            py0 = int(v0 * (h - 1))
+            py1 = int(v1 * (h - 1))
+
+            left = min(px0, px1)
+            top = min(py0, py1)
+            width = max(1, abs(px1 - px0))
+            height = max(1, abs(py1 - py0))
+            return pygame.Rect(left, top, width, height)
+
+        # Trackfläche
+        for r in track.track_surface_rects:
+            self._blit_rect_with_alpha(bg, world_rect_to_minimap_rect(r), MINIMAP_TRACK_COLOR, MINIMAP_TRACK_ALPHA)
+
+        # Ziellinie hervorheben
+        self._blit_rect_with_alpha(bg, world_rect_to_minimap_rect(track.finish_line_collider), MINIMAP_FINISH_COLOR, MINIMAP_FINISH_ALPHA)
+
+        return bg
+
+    def _get_centerline_marker_world_pos(self, track, px_world, py_world):
+        """Projiziert die Position auf die Mittellinie des aktuellen Strecken-Segments (Track-Rect)."""
+        rects = track.track_surface_rects
+        if not rects:
+            return px_world, py_world
+
+        # 1) Bevorzugt: Rechteck, in dem der Punkt liegt (falls mehrere: kleinstes Flächenmaß -> meist das "Segment")
+        best_rect = None
+        best_area = None
+
+        for r in rects:
+            cx = float(r.position[0])
+            cy = float(r.position[1])
+            half_w = float(r.width) / 2.0
+            half_h = float(r.height) / 2.0
+
+            if abs(px_world - cx) <= half_w and abs(py_world - cy) <= half_h:
+                area = float(r.width) * float(r.height)
+                if best_rect is None or area < best_area:
+                    best_rect = r
+                    best_area = area
+
+        # 2) Fallback: nächstes Segment per Distanz zum Mittelpunkt
+        if best_rect is None:
+            best_dist2 = None
+            for r in rects:
+                cx = float(r.position[0])
+                cy = float(r.position[1])
+                dx = px_world - cx
+                dy = py_world - cy
+                dist2 = dx * dx + dy * dy
+                if best_rect is None or dist2 < best_dist2:
+                    best_rect = r
+                    best_dist2 = dist2
+
+        cx = float(best_rect.position[0])
+        cy = float(best_rect.position[1])
+        half_w = float(best_rect.width) / 2.0
+        half_h = float(best_rect.height) / 2.0
+
+        # "Länge" = längere Kante; "Breite" = kürzere Kante -> diese klemmen wir auf die Mitte.
+        if float(best_rect.width) >= float(best_rect.height):
+            # Horizontaler Abschnitt: x frei, y auf Mitte
+            x = min(max(px_world, cx - half_w), cx + half_w)
+            y = cy
+        else:
+            # Vertikaler Abschnitt: y frei, x auf Mitte
+            x = cx
+            y = min(max(py_world, cy - half_h), cy + half_h)
+
+        return x, y
+
+    def init_minimap(self, race):
+        """Initialisiert die Mini-Map für das übergebene Rennen (einmalig pro Track)."""
+        if not MINIMAP_ENABLED:
+            self.minimap_bg = None
+            self.minimap_world_bounds = None
+            return
+
+        track = race.race_track
+        bounds = self._compute_track_world_bounds(track)
+        self.minimap_world_bounds = bounds
+
+        # Wenn es ein schönes Minimap-Bild gibt: verwenden. Sonst Fallback rendern.
+        img = self._load_minimap_image(race)
+        if img is not None:
+            self.minimap_bg = img
+        else:
+            self.minimap_bg = self._render_fallback_minimap(track, bounds, MINIMAP_FALLBACK_SIZE)
+
+        # Zusätzliche Anzeige-Skalierung (z.B. 0.9 = 10% kleiner)
+        if self.minimap_bg is not None and MINIMAP_DISPLAY_SCALE != 1.0:
+            new_w = max(1, int(round(self.minimap_bg.get_width() * float(MINIMAP_DISPLAY_SCALE))))
+            new_h = max(1, int(round(self.minimap_bg.get_height() * float(MINIMAP_DISPLAY_SCALE))))
+            if new_w != self.minimap_bg.get_width() or new_h != self.minimap_bg.get_height():
+                # Nearest-Neighbor für Retro-Look
+                self.minimap_bg = pygame.transform.scale(self.minimap_bg, (new_w, new_h))
+
+    def draw_minimap(self):
+        """Zeichnet die Mini-Map unten links + Spieler-Marker."""
+        if not MINIMAP_ENABLED:
+            return
+        if not self.in_racing_mode:
+            return
+        if self.minimap_bg is None or self.minimap_world_bounds is None:
+            return
+
+        bg = self.minimap_bg
+        bg_w, bg_h = bg.get_width(), bg.get_height()
+
+        # Screen-Position unten links
+        x0 = int(MINIMAP_MARGIN_LEFT)
+        y0 = int(HEIGHT - MINIMAP_MARGIN_BOTTOM - bg_h)
+
+        # Background
+        self.screen.blit(bg, (x0, y0))
+
+        # Spieler-Marker
+        x_min, x_max, y_min, y_max = self.minimap_world_bounds
+        span_x = (x_max - x_min) if (x_max - x_min) != 0 else 1.0
+        span_y = (y_max - y_min) if (y_max - y_min) != 0 else 1.0
+
+        px_world = float(self.player.position[0])
+        py_world = float(self.player.position[1])
+
+        if MINIMAP_MARKER_CLAMP_TO_TRACK_CENTER:
+            track = self.player.current_race.race_track
+            px_world, py_world = self._get_centerline_marker_world_pos(track, px_world, py_world)
+
+        # Minimap-x entspricht Welt-y, Minimap-y entspricht Welt-x
+        u = (py_world - y_min) / span_y
+        v = (px_world - x_min) / span_x
+
+        # Clampen, falls Spieler kurz außerhalb ist
+        if u < 0.0: u = 0.0
+        if u > 1.0: u = 1.0
+        if v < 0.0: v = 0.0
+        if v > 1.0: v = 1.0
+
+        mx = x0 + int(u * (bg_w - 1))
+        my = y0 + int(v * (bg_h - 1))
+
+        radius = max(2, int(MINIMAP_PLAYER_RADIUS * MINIMAP_MARKER_SCALE))
+
+        # Optional: Richtungs-Strich (Blickrichtung)
+        if MINIMAP_SHOW_HEADING:
+            # Heading: (sin, cos) passt zur Welt->Minimap-Achsenbelegung
+            hx = math.sin(self.player.angle)
+            hy = math.cos(self.player.angle)
+            heading_len = max(4, int(MINIMAP_HEADING_LENGTH * MINIMAP_MARKER_SCALE))
+
+            ex = mx + int(hx * heading_len)
+            ey = my + int(hy * heading_len)
+
+            pygame.draw.line(self.screen, MINIMAP_PLAYER_OUTLINE_COLOR, (mx, my), (ex, ey), 2)
+            pygame.draw.line(self.screen, MINIMAP_PLAYER_COLOR, (mx, my), (ex, ey), 1)
+
+        pygame.draw.circle(self.screen, MINIMAP_PLAYER_OUTLINE_COLOR, (mx, my), radius + 1)
+        pygame.draw.circle(self.screen, MINIMAP_PLAYER_COLOR, (mx, my), radius)
+
     def draw(self):
         # Zeichnet die Mode-7-Umgebung
         self.mode7.draw()
@@ -394,6 +667,10 @@ class App:
 
         # Zeichnet UI-Sprites auf den Bildschirm
         self.ui_sprites.draw(self.screen)
+
+        # Mini-Map (unten links)
+        if self.in_racing_mode:
+            self.draw_minimap()
 
         # Zeichnet Rundenzeit-Benachrichtigung (falls aktiv)
         if self.in_racing_mode:
