@@ -39,6 +39,7 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
 - **Map Editor** zum visuellen Erstellen von Strecken-Kollisionen
 - **Bobbing-Effekt** beim Fahren (F-Zero-Style Auf-und-Ab)
 - **Dirt-Zonen** als neues Streckenelement (verlangsamt den Spieler)
+- **Partikel-Effekte** bei der Landung nach Sprüngen (Funkenflug)
 - Verbesserte Sprungphysik (kürzere, präzisere Sprünge)
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).

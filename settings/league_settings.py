@@ -1,4 +1,4 @@
-# Settings for the leagues that are playable in the game.
+# Einstellungen für die Ligen, die im Spiel spielbar sind.
 
 from race import Race
 from league import League
@@ -6,7 +6,7 @@ from league import League
 from settings.track_settings import TrackCreator, STD_REQUIRED_LAPS
 from settings.music_settings import BGM_DICT
 
-# ------------- creation of the different leagues in the game --------------------------
+# ------------- Erzeugung der verschiedenen Ligen im Spiel --------------------------
 
 LEAGUE_1_RACES = [
     Race( # 0: Funktioniert1 - Erste selbst erstellte Strecke
@@ -36,10 +36,10 @@ LEAGUE_1_RACES = [
 ]
 LEAGUE_1 = League(LEAGUE_1_RACES)
 
-# special league that is not meant to be played
-# but serves as the track list to select from in single race
+# Spezielle Liga, die nicht zum Spielen gedacht ist,
+# sondern als Track-Liste für die Auswahl im Einzelrennen dient.
 SINGLE_MODE_RACES = LEAGUE_1_RACES 
 
-# ---------------------------- end of league creation --------------------------
+# ---------------------------- Ende der Ligenerzeugung --------------------------
 
 LEAGUES = [LEAGUE_1]

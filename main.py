@@ -18,6 +18,7 @@ from settings.music_settings import *
 # Weitere Importe aus diesem Projekt
 from mode7 import Mode7
 from player import Player
+from particles import SparkParticle
 from camera import Camera
 from track import Track
 from race import Race
@@ -53,6 +54,9 @@ class App:
 
         # Erstellt eine Gruppe von Sprites für alle Sprites in der UI.
         self.ui_sprites = pygame.sprite.Group()
+
+        # Partikel-Gruppe
+        self.particles = pygame.sprite.Group()
 
         # Initialisiert das Modul, das für das Abspielen von Sounds verantwortlich ist
         mixer.init()
@@ -247,6 +251,22 @@ class App:
             # Veranlasst die Mode7-gerenderte Umgebung zur Aktualisierung
             self.mode7.update(self.camera)
 
+            # --- PARTIKEL UPDATE ---
+            self.particles.update()
+
+            # Prüfen auf Landung für Funken-Effekt
+            if self.player.just_landed:
+                self.player.just_landed = False
+                
+                # Funkenregen erzeugen
+                # Position: Unten am Raumschiff (beim Schatten)
+                spawn_x = self.player.rect.centerx
+                spawn_y = self.player.rect.bottom - 5
+                
+                for _ in range(20):
+                    spark = SparkParticle(spawn_x, spawn_y)
+                    self.particles.add(spark)
+
             # Timer in der UI aktualisieren, wenn der Spieler das aktuelle Rennen noch nicht beendet hat
             # und nicht zerstört wurde (Game Over).
             # Timer startet erst, wenn das Rennen begonnen hat (erste Ziellinie überquert).
@@ -357,6 +377,7 @@ class App:
         self.moving_sprites = pygame.sprite.Group()
         self.static_sprites = pygame.sprite.Group()
         self.ui_sprites = pygame.sprite.Group()
+        self.particles = pygame.sprite.Group()
 
     def draw(self):
         # Zeichnet die Mode-7-Umgebung
@@ -367,6 +388,9 @@ class App:
 
         # Zeichnet bewegliche Sprites (z.B. Spieler) auf den Bildschirm
         self.moving_sprites.draw(self.screen)
+
+        # Zeichnet Partikel
+        self.particles.draw(self.screen)
 
         # Zeichnet UI-Sprites auf den Bildschirm
         self.ui_sprites.draw(self.screen)

@@ -1,98 +1,98 @@
-# Settings for the race tracks and their collision maps.
+# Einstellungen für die Race-Tracks und ihre Collision-Maps.
 
-import numpy # numpy arrays used for positions of rectangle colliders
+import numpy # numpy-Arrays für Positionen von Rechteck-Collidern
 from collision import CollisionRect
 from track import Track, KeyCheckpoint 
 
-# race configuration
-STD_REQUIRED_LAPS = 3 # number of laps normally required to finish a race
+# Race-Konfiguration
+STD_REQUIRED_LAPS = 3 # Anzahl Runden, die normalerweise nötig sind, um ein Race zu beenden
 
-# obstacle sizes for "prefab" obstacles
+# Hindernis-Größen für "Prefab"-Obstacles
 DASH_PLATE_HEIGHT = 1.5
 DASH_PLATE_WIDTH = 1.5
 
-# A class that capsulates the creation of the objects representing the race tracks in memory
-# to avoid crowding the main module.
+# Eine Klasse, die die Erstellung der Objekte kapselt, die die Race-Tracks im Speicher repräsentieren,
+# um das Hauptmodul nicht zu überladen.
 #
-# Holds several static methods to create the different tracks.
+# Enthält mehrere statische Methoden, um die verschiedenen Tracks zu erzeugen.
 class TrackCreator:
-    # Creates the collision shape for the track whose sprite is named "track_2023.png"
+    # Erstellt die Collision-Shape für den Track, dessen Sprite "track_2023.png" heißt
     def create_track_2023():
-        # creating colliders for track
+        # Track-Collider erstellen
 
-        # left-most rect
+        # linkestes Rect
         rect1 = CollisionRect(
             pos = numpy.array([27.165, -99.615]),
             w = 14.33,
             h = 144.77
         )
 
-        # rect next to rect1's lower end
+        # Rect neben rect1 (an dessen unterem Ende)
         rect2 = CollisionRect(
             pos = numpy.array([39.17, -162.635]),
             w = 9.68,
             h = 18.73
         )
 
-        # lowest horizontal rect
+        # unterstes horizontales Rect
         rect3 = CollisionRect(
             pos = numpy.array([47.815, -157.725]),
             w = 26.97,
             h = 8.91
         )
 
-        # second vertical rect from the right
+        # zweites vertikales Rect von rechts
         rect4 = CollisionRect(
             pos = numpy.array([56.925, -142.14]),
             w = 8.69,
             h = 40.08
         )
 
-        # middle horizontal rect
+        # mittleres horizontales Rect
         rect5 = CollisionRect(
             pos = numpy.array([62.385, -125.59]),
             w = 19.55,
             h = 8.98
         )
 
-        # right-most vertical rect
+        # rechtestes vertikales Rect
         rect6 = CollisionRect(
             pos = numpy.array([67.95, -86.495]),
             w = 8.42,
             h = 118.53
         )
 
-        # top horizontal rect
+        # oberstes horizontales Rect
         rect7 = CollisionRect(
             pos = numpy.array([46.08, -33.24]),
             w = 52.16,
             h = 11.86
         )
 
-        # end of track collider creation
+        # Ende der Track-Collider-Erstellung
 
-        # finish line collider
+        # Ziellinien-Collider
         finish_line_coll = CollisionRect(
             pos = numpy.array([27.165, -116.6325]),
             w = 14.33,
             h = 1.145
         )
 
-        # (the only) jump ramp
+        # (die einzige) Sprungrampe
         ramp1 = CollisionRect(
             pos = numpy.array([67.95, -145.82]),
             w = 8.42,
             h = 0.12
         )
 
-        # (the only) dash plate
+        # (die einzige) Dash-Plate
         dash_plate1 = CollisionRect(
             pos = numpy.array([32.4, -150.965]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # (the only) recovery zone
+        # (die einzige) Recovery-Zone
         recovery_zone_1 = CollisionRect(
             pos = numpy.array([67.99, -75.64]),
             w = 2.28,
@@ -110,7 +110,7 @@ class TrackCreator:
             has_guard_rails = True
         )
 
-    # for now this is just an empty track with the monochrome environment texture set
+    # Vorerst ist das nur ein leerer Track mit gesetzter monochromer Environment-Textur
     def create_monochrome_track():
         finish_line_coll = CollisionRect(
             pos = numpy.array([1127.165, -116.6325]),
@@ -135,176 +135,176 @@ class TrackCreator:
             has_guard_rails = False
         )
 
-    # Creates the collision shape for the track whose sprite is named "track_2023_II.png".
-    # For now, this is just the collision shape of the first track for testing purposes.
+    # Erstellt die Collision-Shape für den Track, dessen Sprite "track_2023_II.png" heißt.
+    # Vorerst ist das nur die Collision-Shape des ersten Tracks (für Testzwecke).
     def create_track_2023_II():
-        # ------------ creating colliders for track ----------------------
+        # ------------ Track-Collider erstellen ----------------------
 
-        # ------------ rects kept from the first version of the track ----
+        # ------------ Rects aus der ersten Track-Version übernommen ----
 
-        # top left-most rect
+        # oberstes linkes Rect
         rect1 = CollisionRect(
             pos = numpy.array([27.165, -99.615]),
             w = 14.33,
             h = 144.77
         )
 
-        # rect next to rect1's lower end
+        # Rect neben rect1 (an dessen unterem Ende)
         rect2 = CollisionRect(
             pos = numpy.array([39.17, -162.635]),
             w = 9.68,
             h = 18.73
         )
 
-        # second-to-lowest horizontal rect
+        # zweitunterstes horizontales Rect
         rect3 = CollisionRect(
             pos = numpy.array([47.815, -157.725]),
             w = 26.97,
             h = 8.91
         )
 
-        # second vertical rect from the right
+        # zweites vertikales Rect von rechts
         rect4 = CollisionRect(
             pos = numpy.array([56.925, -142.14]),
             w = 8.69,
             h = 40.08
         )
 
-        # third-to-lowest horizontal rect
+        # drittunterstes horizontales Rect
         rect5 = CollisionRect(
             pos = numpy.array([62.385, -125.59]),
             w = 19.55,
             h = 8.98
         )
 
-        # top horizontal rect
+        # oberstes horizontales Rect
         rect7 = CollisionRect(
             pos = numpy.array([46.08, -33.24]),
             w = 52.16,
             h = 11.86
         )
 
-        # ------------ end of rects kept from the first version of the track ----
+        # ------------ Ende der übernommenen Rects aus der ersten Track-Version ----
 
-        # top right-most vertical rect
+        # oberstes rechtes vertikales Rect
         rect8 = CollisionRect(
             pos = numpy.array([67.95, -45.725]),
             w = 8.42,
             h = 36.99
         )
 
-        # bottom right-most vertical rect
+        # unterstes rechtes vertikales Rect
         rect9 = CollisionRect(
             pos = numpy.array([67.95, -147.03]),
             w = 8.42,
             h = 97.135
         )
 
-        # lowest horizontal rect
+        # unterstes horizontales Rect
         rect10 = CollisionRect(
             pos = numpy.array([46.08, -191.55]),
             w = 52.16,
             h = 8.105
         )
 
-        # lower left-most vertical rect
+        # unterstes linkes vertikales Rect
         rect11 = CollisionRect(
             pos = numpy.array([27.165, -186.8]),
             w = 14.33,
             h = 17.605
         )
 
-        # second-to-top horizontal rect
+        # zweitoberstes horizontales Rect
         rect12 = CollisionRect(
             pos = numpy.array([56.43, -60.21]),
             w = 31.42,
             h = 8.01
         )
 
-        # vertical rect connecting rects 12 and 14
+        # vertikales Rect, das Rect 12 und 14 verbindet
         rect13 = CollisionRect(
             pos = numpy.array([44.82, -81.24]),
             w = 8.2,
             h = 50.06
         )
 
-        # third-to-top horizontal rect
+        # drittoberstes horizontales Rect
         rect14 = CollisionRect(
             pos = numpy.array([56.43, -102.47]),
             w = 31.42,
             h = 8.01
         )
 
-        # ------------ end of track collider creation -------------------------
+        # ------------ Ende der Track-Collider-Erstellung -------------------------
 
-        # ------------ dash plate collider creation ---------------------------
+        # ------------ Dash-Plate-Collider erstellen ---------------------------
 
-        # first dash plate (in order of encounter when driving a normal lap)
+        # erste Dash-Plate (in der Reihenfolge der Begegnung in einer normalen Runde)
         dash_plate1 = CollisionRect(
             pos = numpy.array([65.265, -136.89]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # second dash plate (in order of encounter when driving a normal lap)
+        # zweite Dash-Plate (in der Reihenfolge der Begegnung in einer normalen Runde)
         dash_plate2 = CollisionRect(
             pos = numpy.array([70.756, -166.1]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # third dash plate (in order of encounter when driving a normal lap)
+        # dritte Dash-Plate (in der Reihenfolge der Begegnung in einer normalen Runde)
         dash_plate3 = CollisionRect(
             pos = numpy.array([60.17, -188.88]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # fourth dash plate (in order of encounter when driving a normal lap)
+        # vierte Dash-Plate (in der Reihenfolge der Begegnung in einer normalen Runde)
         dash_plate4 = CollisionRect(
             pos = numpy.array([39.89, -194.165]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # left-most of the three dash plates before the small gap
+        # linkeste der drei Dash-Plates vor der kleinen Lücke
         dash_plate_left = CollisionRect(
             pos = numpy.array([22.6, -179.17]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # middle-one of the three dash plates before the small gap
+        # mittlere der drei Dash-Plates vor der kleinen Lücke
         dash_plate_middle = CollisionRect(
             pos = numpy.array([25.235, -179.17]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # right-most of the three dash plates before the small gap
+        # rechteste der drei Dash-Plates vor der kleinen Lücke
         dash_plate_right = CollisionRect(
             pos = numpy.array([28, -179.17]),
             w = DASH_PLATE_WIDTH,
             h = DASH_PLATE_HEIGHT
         )
 
-        # ------------ end of dash plate collider creation ---------------------------
+        # ------------ Ende der Dash-Plate-Collider-Erstellung ---------------------------
 
-        # finish line collider
+        # Ziellinien-Collider
         finish_line_coll = CollisionRect(
             pos = numpy.array([27.165, -116.6325]),
             w = 14.33,
             h = 1.145
         )
 
-        # (the only) jump ramp
+        # (die einzige) Sprungrampe
         ramp1 = CollisionRect(
             pos = numpy.array([27.165, -177.94]),
             w = 8.42,
             h = 0.12
         )
 
-        # (the only) recovery
+        # (die einzige) Recovery-Zone
         recovery_zone_1 = CollisionRect(
             pos = numpy.array([56.81, -141.72]),
             w = 6.8,
@@ -374,14 +374,14 @@ class TrackCreator:
             h = 1.21
         )
 
-        # ========== RECOVERY ZONES ==========
+        # ========== RECOVERY-ZONEN ==========
         recovery_1 = CollisionRect(
             pos = numpy.array([68.29, -75.29]),
             w = 3.18,
             h = 62.77
         )
 
-        # ========== DASH PLATES ==========
+        # ========== DASH-PLATES ==========
         dash_1 = CollisionRect(
             pos = numpy.array([32.49, -150.89]),
             w = 2.19,
@@ -611,14 +611,14 @@ class TrackCreator:
             h = 2.00
         )
 
-        # ========== RECOVERY ZONE ==========
+        # ========== RECOVERY-ZONE ==========
         recovery_1 = CollisionRect(
             pos = numpy.array([70.33, -109.92]),
             w = 28.33,
             h = 49.83
         )
 
-        # ========== DASH PLATES ==========
+        # ========== DASH-PLATES ==========
         dash_1 = CollisionRect(
             pos = numpy.array([52.67, -165.17]),
             w = 2.67,
@@ -631,7 +631,7 @@ class TrackCreator:
             h = 1.67
         )
 
-        # ========== DIRT ZONES ==========
+        # ========== DIRT-ZONEN ==========
         dirt_1 = CollisionRect(
             pos = numpy.array([48.28, -159.48]),
             w = 11.33,

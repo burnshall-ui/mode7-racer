@@ -85,6 +85,9 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Kurvenneigung: Schiff kippt beim Lenken (wie in F-Zero)
         self.tilt_angle = 0.0  # Aktueller Neigungswinkel in Grad
 
+        # Flag für Lande-Effekt (Partikel)
+        self.just_landed = False
+
     # Aktualisiert Spielerdaten und Position.
     # 
     # Parameter:
@@ -355,29 +358,28 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
 
 
-        # ---------- actual movement of the player ---------------
+        # ---------- tatsächliche Bewegung des Spielers ---------------
 
 
 
-        # Compute movement direction from player inputs 
-        # and speed + centrifugal force strength.
+        # Bewegungsrichtung aus den Spielereingaben berechnen
+        # sowie aus Speed + Stärke der Zentrifugalkraft.
 
 
 
-        # Compute sine and cosine of current angle 
-        # to be able to update player position
-        # based on their rotation.
+        # Sinus und Kosinus des aktuellen Winkels berechnen,
+        # um die Spielerposition basierend auf der Rotation aktualisieren zu können.
         sin_a = numpy.sin(self.angle)
         cos_a = numpy.cos(self.angle)
 
-        # Store the scaled versions of the speed and centrifugal forces directions for convenience.
-        # Scale the directions with the speed 
-        # and the current delta (time between current and last frame).
-        # The latter scale factor must be applied to make the player speed independent of the games framerate
+        # Für die Übersicht: skalierte Varianten der Speed- und Zentrifugalkraft-Richtungen speichern.
+        # Richtungen mit dem Speed skalieren
+        # und mit dem aktuellen Delta (Zeit zwischen aktuellem und letztem Frame).
+        # Der letzte Skalierungsfaktor ist nötig, damit der Player-Speed unabhängig von der Game-Framerate ist
         speed_sin, speed_cos = self.current_speed * delta * sin_a, self.current_speed * delta * cos_a # speed
         cf_sin, cf_cos = self.centri * speed_sin * -1 * delta, self.centri * speed_cos * -1 * delta # centrifugal forces
 
-        # Compute player's position in the next frame including the moved collision rect.
+        # Nächste Frame-Position des Spielers berechnen, inkl. verschobenem Collision-Rect.
         next_frame_position_x = self.position[0] + speed_cos
         next_frame_position_y = self.position[1] + speed_sin
         frame_lookahead_collision_rect = CollisionRect(
@@ -386,22 +388,22 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             h = PLAYER_COLLISION_RECT_HEIGHT
         )
 
-        # Check if player would stay on track when moved as computed above.
-        # If yes or if the player is jumping, move them.
-        # If no, make them bounce back.
+        # Prüfen, ob der Spieler beim Move wie oben berechnet auf dem Track bleibt.
+        # Wenn ja (oder wenn der Spieler springt): bewegen.
+        # Wenn nein: zurückprallen lassen.
         #
-        # Debug-only feature: if collision detection is turned off, the player is always moved, never bounced back.
+        # Nur-Debug-Feature: Wenn Collision-Detection ausgeschaltet ist, wird der Spieler immer bewegt und nie zurückgeprallt.
         if self.current_race.is_on_track(frame_lookahead_collision_rect) or self.jumping or COLLISION_DETECTION_OFF:
             self.position[0] = next_frame_position_x
             self.position[1] = next_frame_position_y
         else:
-            # If guard rails are active:
-            # Player loses some energy and bounces back
+            # Wenn Guard Rails aktiv sind:
+            # Spieler verliert etwas Energie und prallt zurück
             if self.current_race.guard_rails_active():
-                # Player bounces back since their move speed is flipped.
-                # Player does not retain all of its speed.
-                # There is a minimal force that is always applied
-                # to prevent the player getting stuck outside the track boundaries.
+                # Spieler prallt zurück, weil sein Move-Speed umgedreht wird.
+                # Der Spieler behält dabei nicht seinen kompletten Speed.
+                # Es gibt eine minimale Kraft, die immer angewendet wird,
+                # um zu verhindern, dass der Spieler außerhalb der Track-Grenzen festhängt.
                 self.current_speed = -(self.current_speed * OBSTACLE_HIT_SPEED_RETENTION + MIN_BOUNCE_BACK_FORCE)
 
                 # Zentrifugalkraft zurücksetzen um zu verhindern dass Spieler in Wand stecken bleibt
@@ -409,24 +411,24 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 self.steering_left = False
                 self.steering_right = False
 
-                # Player loses energy.
+                # Spieler verliert Energie.
                 self.lose_energy(self.current_speed)
 
-                # player machine is destroyed if it has taken more damage than it can sustain
+                # Player-Maschine wird zerstört, wenn sie mehr Schaden genommen hat, als sie aushält
                 if self.current_energy < 0:
                     self.destroy()
-            # If no guard rails are active:
-            # player machine is destroyed
+            # Wenn keine Guard Rails aktiv sind:
+            # Player-Maschine wird zerstört
             else:
                 self.destroy()
 
 
 
-        # ----------------- application of centrifugal forces
+        # ----------------- Anwenden der Zentrifugalkräfte
 
 
 
-        # compute player position in next frame
+        # Spielerposition im nächsten Frame berechnen
         if self.steering_left:
             next_frame_position_x = self.position[0] - cf_sin
             next_frame_position_y = self.position[1] + cf_cos
@@ -434,46 +436,46 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             next_frame_position_x = self.position[0] + cf_sin
             next_frame_position_y = self.position[1] - cf_cos
 
-        # -------------- determining whether centrifugal forces should be applied -------------------
+        # -------------- Entscheiden, ob Zentrifugalkräfte angewendet werden sollen -------------------
         
         
 
-        # compute position of player in next frame
+        # Spielerposition im nächsten Frame berechnen
         frame_lookahead_collision_rect = CollisionRect(
             pos = numpy.array([next_frame_position_x, next_frame_position_y]),
             w = PLAYER_COLLISION_RECT_WIDTH,
             h = PLAYER_COLLISION_RECT_HEIGHT
         )
 
-        # Check if the player would stay on the track when moved as above.
-        # If so (or the player is jumping or the collision detection is turned off in debug mode), move them.
-        # Else, make the player lose some energy or destroy the player machine
-        # (depending on whether the track has active guard rails).
+        # Prüfen, ob der Spieler auf dem Track bleibt, wenn er wie oben bewegt wird.
+        # Wenn ja (oder wenn der Spieler springt oder Collision-Detection im Debug-Modus aus ist): bewegen.
+        # Sonst: Spieler verliert Energie oder die Player-Maschine wird zerstört
+        # (abhängig davon, ob der Track aktive Guard Rails hat).
         if self.current_race.is_on_track(frame_lookahead_collision_rect) or self.jumping or COLLISION_DETECTION_OFF:
             self.position[0] = next_frame_position_x
             self.position[1] = next_frame_position_y
         else:
             if self.current_race.guard_rails_active():
-                # centrifugal force is reset
+                # Zentrifugalkraft wird zurückgesetzt
                 self.centri = 0
 
-                # player gets damaged proportional to force currently applied
+                # Spieler bekommt Schaden proportional zur aktuell angewendeten Kraft
                 self.lose_energy(self.centri)
 
-                # player machine destroyed if out of energy
+                # Player-Maschine wird zerstört, wenn keine Energie mehr da ist
                 if self.current_energy < 0:
                     self.destroy()
             else: 
-                # player machine immediately destroyed if track has no guard rails active
+                # Player-Maschine wird sofort zerstört, wenn der Track keine aktiven Guard Rails hat
                 self.destroy()
 
 
 
-        # ------------------ end of application of centrifugal forces ------------ 
+        # ------------------ Ende des Anwendens der Zentrifugalkräfte ------------ 
 
 
 
-        # ------ end of actual movement of the player -----------------------
+        # ------ Ende der tatsächlichen Bewegung des Spielers -----------------------
     
     # Aktualisiert Spieler-Status-Flags und bewegt den Spieler
     # zu seiner aktuellen Bildschirm-Y-Position
@@ -492,6 +494,7 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Um visuelle Artefakte zu verhindern, wird das Spieler-Rechteck auf seine normale y-Position auf dem Bildschirm zurückgesetzt.
         if elapsed_time >= self.current_jump_duration:
             self.jumping = False
+            self.just_landed = True # Signal für Landung setzen
 
             self.rect.topleft = [
                 NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y
