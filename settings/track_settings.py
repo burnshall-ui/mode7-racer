@@ -672,3 +672,245 @@ class TrackCreator:
             has_guard_rails = True,
             dirt_rects = [dirt_1]
         )
+
+    def create_track_space3():
+        """Space 3 - Komplexe Strecke mit vielen Kurven, Rampen und Dirt-Zonen"""
+
+        # ========== STRECKE ==========
+        track_1 = CollisionRect(
+            pos = numpy.array([15.45, -147.69]),
+            w = 7.42,
+            h = 83.40
+        )
+
+        track_2 = CollisionRect(
+            pos = numpy.array([28.69, -109.70]),
+            w = 21.32,
+            h = 7.42
+        )
+
+        track_3 = CollisionRect(
+            pos = numpy.array([35.67, -96.35]),
+            w = 7.55,
+            h = 21.31
+        )
+
+        track_4 = CollisionRect(
+            pos = numpy.array([22.51, -89.65]),
+            w = 22.01,
+            h = 7.48
+        )
+
+        track_5 = CollisionRect(
+            pos = numpy.array([15.38, -74.83]),
+            w = 7.62,
+            h = 26.25
+        )
+
+        track_6 = CollisionRect(
+            pos = numpy.array([35.95, -65.55]),
+            w = 35.21,
+            h = 7.55
+        )
+
+        track_7 = CollisionRect(
+            pos = numpy.array([49.81, -56.69]),
+            w = 7.62,
+            h = 12.42
+        )
+
+        track_8 = CollisionRect(
+            pos = numpy.array([36.58, -54.37]),
+            w = 21.52,
+            h = 7.62
+        )
+
+        track_9 = CollisionRect(
+            pos = numpy.array([29.67, -41.28]),
+            w = 7.55,
+            h = 21.94
+        )
+
+        track_10 = CollisionRect(
+            pos = numpy.array([36.66, -34.04]),
+            w = 8.68,
+            h = 7.62
+        )
+
+        track_11 = CollisionRect(
+            pos = numpy.array([61.02, -34.13]),
+            w = 24.08,
+            h = 7.64
+        )
+
+        track_12 = CollisionRect(
+            pos = numpy.array([69.28, -53.25]),
+            w = 7.58,
+            h = 32.13
+        )
+
+        track_13 = CollisionRect(
+            pos = numpy.array([73.07, -76.08]),
+            w = 7.46,
+            h = 30.44
+        )
+
+        track_14 = CollisionRect(
+            pos = numpy.array([73.10, -106.20]),
+            w = 7.41,
+            h = 32.60
+        )
+
+        track_15 = CollisionRect(
+            pos = numpy.array([76.89, -119.85]),
+            w = 7.64,
+            h = 11.14
+        )
+
+        track_16 = CollisionRect(
+            pos = numpy.array([76.86, -130.26]),
+            w = 7.46,
+            h = 13.41
+        )
+
+        track_17 = CollisionRect(
+            pos = numpy.array([61.90, -183.79]),
+            w = 28.05,
+            h = 11.08
+        )
+
+        track_18 = CollisionRect(
+            pos = numpy.array([34.61, -183.74]),
+            w = 32.26,
+            h = 11.10
+        )
+
+        track_19 = CollisionRect(
+            pos = numpy.array([77.45, -172.51]),
+            w = 14.42,
+            h = 33.98
+        )
+
+        # ========== RAMPEN ==========
+        ramp_1 = CollisionRect(
+            pos = numpy.array([40.57, -34.09]),
+            w = 0.96,
+            h = 8.66
+        )
+
+        ramp_2 = CollisionRect(
+            pos = numpy.array([71.55, -77.09]),
+            w = 4.09,
+            h = 0.85
+        )
+
+        ramp_3 = CollisionRect(
+            pos = numpy.array([76.98, -136.53]),
+            w = 9.17,
+            h = 1.20
+        )
+
+        # ========== RECOVERY ZONES ==========
+        recovery_1 = CollisionRect(
+            pos = numpy.array([44.73, -181.34]),
+            w = 42.19,
+            h = 4.16
+        )
+
+        # ========== DIRT ZONES ==========
+        dirt_1 = CollisionRect(
+            pos = numpy.array([69.08, -180.84]),
+            w = 2.54,
+            h = 5.01
+        )
+
+        dirt_2 = CollisionRect(
+            pos = numpy.array([70.77, -180.24]),
+            w = 0.99,
+            h = 3.81
+        )
+
+        dirt_3 = CollisionRect(
+            pos = numpy.array([71.62, -178.16]),
+            w = 2.54,
+            h = 5.29
+        )
+
+        dirt_4 = CollisionRect(
+            pos = numpy.array([83.89, -187.49]),
+            w = 1.22,
+            h = 3.82
+        )
+
+        dirt_5 = CollisionRect(
+            pos = numpy.array([82.78, -188.07]),
+            w = 1.54,
+            h = 2.54
+        )
+
+        dirt_6 = CollisionRect(
+            pos = numpy.array([81.53, -188.68]),
+            w = 1.17,
+            h = 1.43
+        )
+
+        dirt_7 = CollisionRect(
+            pos = numpy.array([22.08, -180.89]),
+            w = 2.39,
+            h = 5.14
+        )
+
+        dirt_8 = CollisionRect(
+            pos = numpy.array([19.64, -180.31]),
+            w = 2.60,
+            h = 4.08
+        )
+
+        dirt_9 = CollisionRect(
+            pos = numpy.array([17.89, -178.37]),
+            w = 2.39,
+            h = 5.09
+        )
+
+        # ========== ZIELLINIE ==========
+        finish_1 = CollisionRect(
+            pos = numpy.array([15.51, -147.65]),
+            w = 7.58,
+            h = 0.90
+        )
+
+        # ========== CHECKPOINTS ==========
+        checkpoint_1 = CollisionRect(
+            pos = numpy.array([49.96, -59.97]),
+            w = 7.70,
+            h = 18.60
+        )
+
+        checkpoint_2 = CollisionRect(
+            pos = numpy.array([73.07, -107.73]),
+            w = 6.95,
+            h = 12.68
+        )
+
+        checkpoint_3 = CollisionRect(
+            pos = numpy.array([57.19, -183.89]),
+            w = 11.65,
+            h = 10.80
+        )
+
+        return Track(
+            name = "Space 3",
+            track_surface_rects = [
+                track_1, track_2, track_3, track_4, track_5,
+                track_6, track_7, track_8, track_9, track_10,
+                track_11, track_12, track_13, track_14, track_15,
+                track_16, track_17, track_18, track_19
+            ],
+            key_checkpoint_rects = [checkpoint_1, checkpoint_2, checkpoint_3],
+            ramp_rects = [ramp_1, ramp_2, ramp_3],
+            finish_line_collider = finish_1,
+            dash_plate_rects = [],
+            recovery_rects = [recovery_1],
+            has_guard_rails = True,
+            dirt_rects = [dirt_1, dirt_2, dirt_3, dirt_4, dirt_5, dirt_6, dirt_7, dirt_8, dirt_9]
+        )

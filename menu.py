@@ -53,6 +53,15 @@ class Menu:
         # Animations-Timer
         self.start_time = time.time()
 
+        # Gradient-Hintergrund einmalig berechnen (Performance-Optimierung)
+        self.gradient_surface = pygame.Surface((WIDTH, HEIGHT))
+        for y in range(HEIGHT):
+            ratio = y / HEIGHT
+            r = int(self.COLOR_BG_TOP[0] * (1 - ratio) + self.COLOR_BG_BOTTOM[0] * ratio)
+            g = int(self.COLOR_BG_TOP[1] * (1 - ratio) + self.COLOR_BG_BOTTOM[1] * ratio)
+            b = int(self.COLOR_BG_TOP[2] * (1 - ratio) + self.COLOR_BG_BOTTOM[2] * ratio)
+            pygame.draw.line(self.gradient_surface, (r, g, b), (0, y), (WIDTH, y))
+
         # Logo-Image laden
         try:
             self.logo_image = pygame.image.load("gfx/ui/mode7_logo.png").convert_alpha()
@@ -73,7 +82,8 @@ class Menu:
         # Track-Namen (nur funktionierende Strecken)
         self.track_names = [
             "Funktioniert1",
-            "Event Horizon I"
+            "Event Horizon I",
+            "Space 3"
         ]
 
     def show_intro(self):
@@ -248,14 +258,8 @@ class Menu:
         return True
 
     def draw_gradient_background(self):
-        """Zeichnet einen Farbverlauf-Hintergrund"""
-        for y in range(HEIGHT):
-            # Interpoliere zwischen Top und Bottom Farbe
-            ratio = y / HEIGHT
-            r = int(self.COLOR_BG_TOP[0] * (1 - ratio) + self.COLOR_BG_BOTTOM[0] * ratio)
-            g = int(self.COLOR_BG_TOP[1] * (1 - ratio) + self.COLOR_BG_BOTTOM[1] * ratio)
-            b = int(self.COLOR_BG_TOP[2] * (1 - ratio) + self.COLOR_BG_BOTTOM[2] * ratio)
-            pygame.draw.line(self.screen, (r, g, b), (0, y), (WIDTH, y))
+        """Zeichnet einen Farbverlauf-Hintergrund (gecacht für Performance)"""
+        self.screen.blit(self.gradient_surface, (0, 0))
 
     def draw_scanlines(self):
         """Zeichnet CRT-Scanlines für Retro-Effekt"""

@@ -2,10 +2,10 @@
 # einschließlich aller physik-Engine-bezogenen Daten (Beschleunigungskraft, Maximalgeschwindigkeit, ...)
 # und Grafiken
 class Machine:
-    def __init__(self, max_speed, boosted_max_speed, acceleration, boosted_acceleration, brake, speed_loss, 
-            boosted_speed_loss, max_centri, centri_increase, centri_decrease, jump_duration_multiplier, boost_duration, max_energy, 
+    def __init__(self, max_speed, boosted_max_speed, acceleration, boosted_acceleration, brake, speed_loss,
+            boosted_speed_loss, max_centri, centri_increase, centri_decrease, jump_duration_multiplier, boost_duration, max_energy,
             boost_cost, hit_cost, recover_speed,
-            rotation_speed, idle_anim, driving_anim, shadow_image_path):
+            rotation_speed, idle_anim, driving_anim, jumping_anim, shadow_image_path):
         # ----------- Initialisierung der Physik-Variablen ----------------------
 
 
@@ -86,6 +86,9 @@ class Machine:
 
         # Bilder der Animation, die abgespielt wird, wenn der Beschleuniger der Maschine gedrückt ist
         self.driving_anim = driving_anim
+
+        # Bilder der Animation, die abgespielt wird, wenn die Maschine springt
+        self.jumping_anim = jumping_anim
 
         # Bild des Schattens, den die Maschine auf die Strecke wirft
         # (sollte unter der Maschine gezeichnet werden)

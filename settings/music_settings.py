@@ -4,5 +4,6 @@ MUSIC_VOLUME = 1
 BGM_DICT = {
     "price-cover": "music/persona-5-price-06.mp3",
     "menu": "music/menu-theme.mp3",
-    "skyline-hyperdrive": "music/skyline-hyperdrive.mp3"
+    "skyline-hyperdrive": "music/skyline-hyperdrive.mp3",
+    "space3": "music/space3.mp3"
 }

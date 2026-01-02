@@ -32,6 +32,18 @@ LEAGUE_1_RACES = [
         init_player_angle = 1.60,
         is_foggy = False,
         music_track_path = BGM_DICT["price-cover"]
+    ),
+    Race( # 2: Space 3 - Komplexe Strecke mit vielen Kurven
+        race_track_creator = TrackCreator.create_track_space3,
+        floor_tex_path = "gfx/track_space3.png",
+        bg_tex_path = "gfx/event_horizon_bg.png",
+        required_laps = STD_REQUIRED_LAPS,
+        race_mode = "time_attack",
+        init_player_pos_x = 15.50,
+        init_player_pos_y = -151.16,
+        init_player_angle = 1.60,
+        is_foggy = False,
+        music_track_path = BGM_DICT["space3"]
     )
 ]
 LEAGUE_1 = League(LEAGUE_1_RACES)

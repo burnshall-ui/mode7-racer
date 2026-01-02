@@ -1,10 +1,14 @@
 {
   "Funktioniert1": {
     "best_lap": 12230.377197265625,
-    "best_total": 44843.57833862305
+    "best_total": 44211.509227752686
   },
   "Event Horizon I": {
     "best_lap": 12912.837266921997,
-    "best_total": 48608.69097709656
+    "best_total": 47426.89847946167
+  },
+  "Space 3": {
+    "best_lap": 24916.05854034424,
+    "best_total": 83533.39290618896
   }
 }

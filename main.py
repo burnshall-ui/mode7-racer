@@ -42,6 +42,9 @@ class App:
     def __init__(self):
         # ------------- Allgemeine Initialisierung --------------------
 
+        # pygame.font muss initialisiert werden, bevor Fonts geladen werden
+        pygame.font.init()
+        
         self.screen = pygame.display.set_mode(WIN_RES)
         self.clock = pygame.time.Clock()
 
@@ -69,6 +72,17 @@ class App:
 
         # Rekord-Infos für aktuelles Rennen (wird nach Rennende gesetzt)
         self.current_race_record_info = None
+
+        # Gecachte Overlay-Surfaces (Performance-Optimierung)
+        self.game_over_overlay = None
+        
+        # Gecachte Fonts für Finish-Screen (Performance-Optimierung)
+        self.race_finished_fonts = {
+            'title': get_pixel_font(int(36 * RENDER_SCALE)),
+            'text': get_pixel_font(int(20 * RENDER_SCALE)),
+            'small': get_pixel_font(int(16 * RENDER_SCALE)),
+            'tiny': get_pixel_font(int(14 * RENDER_SCALE))
+        }
 
         # ------------- Ende der allgemeinen Initialisierung -------------
 
@@ -259,6 +273,15 @@ class App:
 
             # --- PARTIKEL UPDATE ---
             self.particles.update()
+            
+            # Partikel-Limit für Performance (maximal 100 gleichzeitig)
+            MAX_PARTICLES = 100
+            if len(self.particles) > MAX_PARTICLES:
+                # Älteste Partikel entfernen (niedrigste lifetime)
+                particles_list = list(self.particles)
+                particles_list.sort(key=lambda p: p.lifetime)
+                for p in particles_list[:len(particles_list) - MAX_PARTICLES]:
+                    p.kill()
 
             # Prüfen auf Landung für Funken-Effekt
             if self.player.just_landed:
@@ -336,7 +359,7 @@ class App:
 
         # Beschriftung des Fensters zeigt aktuelle Framerate an
         # (f'...' ist eine lesbarere + schnellere Art, Formatstrings zu schreiben als mit "%")
-        pygame.display.set_caption(f'{self.clock.get_fps(): 0.1f}')
+        pygame.display.set_caption(f'{self.clock.get_fps():.1f}')
 
         # Log-Ausgabe für Debug
         if SHOULD_DEBUG_LOG:
@@ -758,20 +781,22 @@ class App:
             self.screen,
             pygame.Color(160, 0, 0),
             pygame.Rect(
-                ENERGY_METER_LEFT_X, # links
-                ENERGY_METER_TOP_Y, # oben
-                (RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - ENERGY_METER_LEFT_X) * (self.player.current_energy / self.player.machine.max_energy), # pos x
-                ENERGY_METER_TOP_Y + (ENERGY_METER_HEIGHT / 2) # pos y
+                ENERGY_METER_LEFT_X, # X-Position (links)
+                ENERGY_METER_TOP_Y, # Y-Position (oben)
+                (RIGHT_MOST_TIMER_DIGIT_SCREEN_X_COORD - ENERGY_METER_LEFT_X) * (self.player.current_energy / self.player.machine.max_energy), # Breite (dynamisch)
+                ENERGY_METER_HEIGHT # Höhe (konstant)
             )
         )
 
     # Zeichnet das Game Over Overlay wenn der Spieler zerstört wurde (SNES-Style)
     def draw_game_over_overlay(self):
-        # Halbtransparentes dunkles Overlay
-        overlay = pygame.Surface((WIDTH, HEIGHT))
-        overlay.fill((0, 0, 0))
-        overlay.set_alpha(GAME_OVER_OVERLAY_ALPHA)
-        self.screen.blit(overlay, (0, 0))
+        # Halbtransparentes dunkles Overlay (gecacht für Performance)
+        if self.game_over_overlay is None:
+            overlay = pygame.Surface((WIDTH, HEIGHT))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(GAME_OVER_OVERLAY_ALPHA)
+            self.game_over_overlay = overlay
+        self.screen.blit(self.game_over_overlay, (0, 0))
 
         # "GAME OVER" Sprite zentriert
         game_over_rect = GAME_OVER_IMAGE.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20))
@@ -783,11 +808,11 @@ class App:
 
     # Zeichnet das Finish Screen Overlay wenn der Spieler das Rennen beendet hat
     def draw_race_finished_overlay(self):
-        # Fonts (kleinere Größen)
-        title_font = get_pixel_font(int(36 * RENDER_SCALE))
-        text_font = get_pixel_font(int(20 * RENDER_SCALE))
-        small_font = get_pixel_font(int(16 * RENDER_SCALE))
-        tiny_font = get_pixel_font(int(14 * RENDER_SCALE))
+        # Fonts (gecacht für Performance)
+        title_font = self.race_finished_fonts['title']
+        text_font = self.race_finished_fonts['text']
+        small_font = self.race_finished_fonts['small']
+        tiny_font = self.race_finished_fonts['tiny']
 
         # "RACE FINISHED!" Titel
         title_text = title_font.render("RACE FINISHED!", True, (255, 255, 100))

@@ -6,7 +6,8 @@ from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, ST
 from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # Rendering-Konfiguration
 from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # Spieler-Kollisionsrechteck-Konfiguration
 from settings.machine_settings import HEIGHT_DURING_JUMP, HIT_COST_SPEED_FACTOR, MIN_BOUNCE_BACK_FORCE
-from settings.machine_settings import OBSTACLE_HIT_SPEED_RETENTION 
+from settings.machine_settings import OBSTACLE_HIT_SPEED_RETENTION
+from settings.machine_settings import MIN_JUMP_SPEED, DIRT_DAMPING, DIRT_MAX_SPEED_FACTOR, BOB_SPEED, BOB_AMPLITUDE 
 
 from collision import CollisionRect
 
@@ -34,9 +35,10 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         self.current_energy = self.machine.max_energy
 
         # Animationsvariablen initialisieren durch Aufruf des entsprechenden Superklassen-Konstruktors
-        AnimatedMachine.__init__(self, 
+        AnimatedMachine.__init__(self,
             idle_anim = self.machine.idle_anim,
-            driving_anim = self.machine.driving_anim
+            driving_anim = self.machine.driving_anim,
+            jumping_anim = self.machine.jumping_anim
         )
         
         # Animation auf die initiale umschalten
@@ -121,7 +123,6 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # Spieler springen lassen, wenn auf Rampe.
         # Nur springen wenn Geschwindigkeit positiv und über Minimum (verhindert Rückwärts-Sprünge)
-        MIN_JUMP_SPEED = 2.0  # Mindestgeschwindigkeit für Sprung
         if self.current_race.is_on_ramp(current_collision_rect) and not self.jumping and self.current_speed >= MIN_JUMP_SPEED:
             self.jumping = True # Status-Flag setzen
             self.current_jump_duration = self.machine.jump_duration_multiplier * self.current_speed # Sprungdauer basierend auf Geschwindigkeit berechnen
@@ -140,9 +141,6 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Über Dirt springen hat keinen Effekt.
         if self.current_race.is_on_dirt(current_collision_rect) and not self.jumping:
             # Damping-Effekt: Geschwindigkeit wird pro Frame reduziert
-            DIRT_DAMPING = 0.98  # Behält 98% der Geschwindigkeit pro Frame (sanfter)
-            DIRT_MAX_SPEED_FACTOR = 0.9  # Maximal 90% der normalen Höchstgeschwindigkeit auf Dirt
-
             self.current_speed *= DIRT_DAMPING
 
             # Zusätzlich: Höchstgeschwindigkeit auf Dirt begrenzen
@@ -151,6 +149,10 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 self.current_speed = dirt_max_speed
 
         # Aktuelle Animation des Spielers vorrücken und Bild des Spieler-Sprites aktualisieren
+        # Beim Springen: Jump-Animation verwenden
+        if self.jumping:
+            self.switch_to_jumping_animation()
+
         self.advance_current_animation(delta)
         self.image = self.current_frame()
 
@@ -162,16 +164,13 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # (beim Lenken neigt sich das Schiff stattdessen)
         is_steering = self.steering_left or self.steering_right
         if not self.jumping and self.current_speed > 0 and not is_steering:
-            # Bobbing-Parameter
-            BOB_SPEED = 12.0  # Wie schnell das Schiff bobt (höher = schneller)
-            BOB_AMPLITUDE = 2.0 * RENDER_SCALE  # Maximale Auf-/Ab-Bewegung in Pixeln
-
             # Phase voranschreiten (schneller bei höherer Geschwindigkeit)
             speed_factor = min(1.0, self.current_speed / self.machine.max_speed)
             self.bob_phase += BOB_SPEED * delta * speed_factor
 
             # Sinusförmige Bewegung berechnen
-            bob_offset = numpy.sin(self.bob_phase) * BOB_AMPLITUDE * speed_factor
+            bob_amplitude_scaled = BOB_AMPLITUDE * RENDER_SCALE
+            bob_offset = numpy.sin(self.bob_phase) * bob_amplitude_scaled * speed_factor
 
             # Y-Position anpassen
             self.rect.topleft = [

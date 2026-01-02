@@ -113,11 +113,11 @@ MINIMAP_SCALE_WITH_RENDER_SCALE = True
 
 # Zusätzliche Skalierung der Mini-Map bei der Anzeige
 # 1.0 = original, 0.9 = 10% kleiner
-MINIMAP_DISPLAY_SCALE = 0.81
+MINIMAP_DISPLAY_SCALE = 0.75
 
 # Zusätzliche Skalierung für den Marker (Punkt + Richtung)
 # 1.0 = original, 0.9 = 10% kleiner
-MINIMAP_MARKER_SCALE = 0.9
+MINIMAP_MARKER_SCALE = 1.0
 
 # Wenn False: kein Richtungs-Strich (nur Punkt)
 MINIMAP_SHOW_HEADING = False

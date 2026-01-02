@@ -80,11 +80,14 @@ class AnimatedObject:
 # Eine Klasse, die die Animationen für die Maschinen behandelt, die im Spiel steuerbar sind.
 class AnimatedMachine(AnimatedObject):
     # Konstruktor, der den Animationsautomaten für die Maschine einrichtet.
-    def __init__(self, driving_anim, idle_anim):
-        super().__init__({ "idle": idle_anim, "driving": driving_anim })
+    def __init__(self, driving_anim, idle_anim, jumping_anim):
+        super().__init__({ "idle": idle_anim, "driving": driving_anim, "jumping": jumping_anim })
 
     def switch_to_driving_animation(self):
         self.switch_animation("driving")
 
     def switch_to_idle_animation(self):
         self.switch_animation("idle")
+
+    def switch_to_jumping_animation(self):
+        self.switch_animation("jumping")

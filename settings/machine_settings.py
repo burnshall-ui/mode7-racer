@@ -54,6 +54,17 @@ def HEIGHT_DURING_JUMP(time, jump_duration):
 DRIVING_ANIM_SPEED = 12
 IDLE_ANIM_SPEED = 12
 
+# Sprung-Physik-Konstanten
+MIN_JUMP_SPEED = 2.0  # Mindestgeschwindigkeit für Sprung (verhindert Rückwärts-Sprünge)
+
+# Dirt-Zone-Konstanten
+DIRT_DAMPING = 0.98  # Behält 98% der Geschwindigkeit pro Frame (sanfter Damping-Effekt)
+DIRT_MAX_SPEED_FACTOR = 0.9  # Maximal 90% der normalen Höchstgeschwindigkeit auf Dirt
+
+# Bobbing-Effekt-Konstanten (F-Zero-Style Auf-und-Ab beim Fahren)
+BOB_SPEED = 12.0  # Wie schnell das Schiff bobt (höher = schneller)
+BOB_AMPLITUDE = 2.0  # Maximale Auf-/Ab-Bewegung in Pixeln (wird mit RENDER_SCALE multipliziert)
+
 # Maschinen, die im Spiel spielbar sind
 
 PURPLE_COMET_GRAPHICS_ROOT_PATH = "gfx/machines/purple_comet/"
@@ -77,6 +88,13 @@ PURPLE_COMET_IDLE_ANIMATION = Animation(
     speed = IDLE_ANIM_SPEED
 )
 
+PURPLE_COMET_JUMPING_ANIMATION = Animation(
+    frames = [
+        load_scaled_image(PURPLE_COMET_GRAPHICS_ROOT_PATH + "violet_machine0004.png")
+    ],
+    speed = IDLE_ANIM_SPEED
+)
+
 PURPLE_COMET = Machine(
     max_speed = PURPLE_COMET_MAX_SPEED,
     boosted_max_speed = PURPLE_COMET_MAX_SPEED * 1.4,
@@ -93,10 +111,11 @@ PURPLE_COMET = Machine(
     max_energy = STD_MAX_ENERGY,
     boost_cost = 19,
     hit_cost = 1,
-    recover_speed = 13,
+    recover_speed = 50,
     rotation_speed = 2.5,
     idle_anim = PURPLE_COMET_IDLE_ANIMATION,
     driving_anim = PURPLE_COMET_DRIVING_ANIMATION,
+    jumping_anim = PURPLE_COMET_JUMPING_ANIMATION,
     shadow_image_path = PURPLE_COMET_SHADOW_IMAGE_PATH
 )
 
@@ -120,6 +139,7 @@ FASTER_PURPLE_COMET = Machine(
     rotation_speed = PURPLE_COMET.rotation_speed * 0.75,
     idle_anim = PURPLE_COMET_IDLE_ANIMATION,
     driving_anim = PURPLE_COMET_DRIVING_ANIMATION,
+    jumping_anim = PURPLE_COMET_JUMPING_ANIMATION,
     shadow_image_path = PURPLE_COMET_SHADOW_IMAGE_PATH
 )
 
@@ -143,6 +163,7 @@ SLOWER_PURPLE_COMET = Machine(
     rotation_speed = PURPLE_COMET.rotation_speed * 1.3,
     idle_anim = PURPLE_COMET_IDLE_ANIMATION,
     driving_anim = PURPLE_COMET_DRIVING_ANIMATION,
+    jumping_anim = PURPLE_COMET_JUMPING_ANIMATION,
     shadow_image_path = PURPLE_COMET_SHADOW_IMAGE_PATH
 )
 

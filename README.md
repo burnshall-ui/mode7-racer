@@ -16,9 +16,10 @@ Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 
 ## Aktueller Status
 
-**Testversion mit 2 funktionierenden Strecken:**
+**Testversion mit 3 funktionierenden Strecken:**
 - Funktioniert1 (neue selbst erstellte Strecke)
 - Event Horizon I
+- Space 3 (komplexe Strecke mit vielen Kurven und Rampen)
 
 Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht zur Textur.
 
@@ -43,6 +44,17 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
 - **Dirt-Zonen** als neues Streckenelement (verlangsamt den Spieler)
 - **Partikel-Effekte** bei der Landung nach Sprüngen (Funkenflug)
 - Verbesserte Sprungphysik (kürzere, präzisere Sprünge)
+- **Dedizierte Jump-Animation** (Sprite 0004 beim Springen)
+- **Performance-Optimierungen:**
+  - Gecachte Overlay-Surfaces (Game Over, Finish Screen)
+  - Gecachte Fonts für bessere Framerate
+  - Gecachte Gradient-Hintergründe im Menü
+  - Optimierte Konstanten in eigene Module ausgelagert
+  - Partikel-Limit für stabile Performance
+- **Balance-Verbesserungen:**
+  - Recovery-Geschwindigkeit 4x schneller (50 statt 13)
+  - Energieanzeige korrekt skaliert
+  - Konsistentere Schadensberechnung
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
