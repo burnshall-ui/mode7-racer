@@ -45,6 +45,11 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
 - **Partikel-Effekte** bei der Landung nach Sprüngen (Funkenflug)
 - Verbesserte Sprungphysik (kürzere, präzisere Sprünge)
 - **Dedizierte Jump-Animation** (Sprite 0004 beim Springen)
+- **Highscore-System:** Persistente Speicherung der Bestzeiten (JSON).
+- **Erweiterte Audio-Kulisse:**
+  - Differenzierte Motorgeräusche (Leerlauf, Gas, Boost, Lenken)
+  - Kollisions-Sounds und Regenerations-Effekte
+  - Neuer Race-Finished-Screen mit Musik
 - **Performance-Optimierungen:**
   - Gecachte Overlay-Surfaces (Game Over, Finish Screen)
   - Gecachte Fonts für bessere Framerate
