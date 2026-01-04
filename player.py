@@ -1,5 +1,6 @@
 import numpy
 import pygame
+from pygame import mixer
 
 from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # Debug-Konfiguration
 from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # Tastenbelegungs-Konfiguration
@@ -87,6 +88,36 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Kurvenneigung: Schiff kippt beim Lenken (wie in F-Zero)
         self.tilt_angle = 0.0  # Aktueller Neigungswinkel in Grad
 
+        # Engine-Sounds laden
+        try:
+            self.engine_sounds = {
+                "idle": mixer.Sound("sounds/leerlauf.wav"),
+                "normal": mixer.Sound("sounds/gas_normal.wav"),
+                "boost": mixer.Sound("sounds/gas_boost.wav"),
+                "steering": mixer.Sound("sounds/gas_lenken.wav")
+            }
+            # Lautstärke anpassen
+            for sound in self.engine_sounds.values():
+                sound.set_volume(0.4)
+
+            self.current_engine_sound = None  # Aktuell abgespielter Sound
+            self.current_engine_state = None  # idle, normal, boost
+
+            # NEU: Status für den separaten Kurvensound
+            self.steering_sound_playing = False
+            
+            # Zusätzliche SFX
+            self.collision_sound = mixer.Sound("sounds/kollision.wav")
+            self.collision_sound.set_volume(0.6)
+            
+            self.regen_sound = mixer.Sound("sounds/regeneration.wav")
+            self.regen_sound.set_volume(0.5)
+            self.regen_sound_playing = False
+            
+        except Exception as e:
+            print(f"Engine-Sounds konnten nicht geladen werden: {e}")
+            self.engine_sounds = None
+
         # Flag für Lande-Effekt (Partikel)
         self.just_landed = False
 
@@ -132,10 +163,22 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # Spieler Energie wiederherstellen lassen, wenn in Wiederherstellungszone.
         # Über eine Wiederherstellungszone springen zählt natürlich nicht.
-        if self.current_race.is_on_recovery_zone(current_collision_rect) and not self.jumping:
+        is_recovering = self.current_race.is_on_recovery_zone(current_collision_rect) and not self.jumping
+        
+        if is_recovering:
             self.current_energy += self.machine.recover_speed * delta
             if self.current_energy > self.machine.max_energy:
                 self.current_energy = self.machine.max_energy
+            
+            # Sound abspielen wenn nicht schon läuft
+            if self.engine_sounds and not self.regen_sound_playing and not self.finished and not self.destroyed:
+                self.regen_sound.play(loops=-1)
+                self.regen_sound_playing = True
+        else:
+            # Sound stoppen wenn wir den Bereich verlassen
+            if self.engine_sounds and self.regen_sound_playing:
+                self.regen_sound.stop()
+                self.regen_sound_playing = False
 
         # Spieler verlangsamen, wenn auf Dirt-Zone.
         # Über Dirt springen hat keinen Effekt.
@@ -184,6 +227,69 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 NORMAL_ON_SCREEN_PLAYER_POSITION_X,
                 NORMAL_ON_SCREEN_PLAYER_POSITION_Y
             ]
+
+        # Engine-Sound-Verwaltung
+        if self.engine_sounds and not self.destroyed and not IN_DEV_MODE:
+            # Wenn das Rennen vorbei ist, alle Sounds stoppen
+            if self.finished:
+                if self.current_engine_sound:
+                    self.current_engine_sound.stop()
+                    self.current_engine_sound = None
+                    self.current_engine_state = None
+                if self.steering_sound_playing:
+                    self.engine_sounds["steering"].stop()
+                    self.steering_sound_playing = False
+                if self.regen_sound_playing:
+                    self.regen_sound.stop()
+                    self.regen_sound_playing = False
+                return
+
+            # Tasteneingaben direkt abfragen für sofortige Sound-Reaktion
+            keys = pygame.key.get_pressed()
+            is_pressing_gas = keys[STD_ACCEL_KEY]
+            is_pressing_left = keys[STD_LEFT_KEY]
+            is_pressing_right = keys[STD_RIGHT_KEY]
+
+            # ---------------------------------------------------------
+            # Teil 1: Basis-Motorsound (Idle, Normal, Boost)
+            # ---------------------------------------------------------
+            # Bestimme den Ziel-Zustand des Motors
+            target_engine_state = "idle"
+
+            # Priorität 1: Boosting
+            if self.boosted and is_pressing_gas:
+                target_engine_state = "boost"
+            # Priorität 2: Normal Gas
+            elif is_pressing_gas:
+                target_engine_state = "normal"
+            # Sonst: Leerlauf (Idle) bleibt gesetzt
+
+            # Sound wechseln, wenn sich der Motor-Status geändert hat
+            if target_engine_state != self.current_engine_state:
+                # Alten Motorsound stoppen
+                if self.current_engine_sound:
+                    self.current_engine_sound.stop()
+
+                # Neuen Sound starten (als Loop)
+                self.current_engine_sound = self.engine_sounds[target_engine_state]
+                self.current_engine_sound.play(loops=-1)
+                self.current_engine_state = target_engine_state
+
+            # ---------------------------------------------------------
+            # Teil 2: Kurvensound (Overlay / Zusätzlich)
+            # ---------------------------------------------------------
+            is_steering = is_pressing_left or is_pressing_right
+
+            if is_steering:
+                # Wenn wir lenken, aber der Sound noch nicht läuft -> starten
+                if not self.steering_sound_playing:
+                    self.engine_sounds["steering"].play(loops=-1)
+                    self.steering_sound_playing = True
+            else:
+                # Wenn wir nicht mehr lenken, aber Sound noch läuft -> stoppen
+                if self.steering_sound_playing:
+                    self.engine_sounds["steering"].stop()
+                    self.steering_sound_playing = False
 
 
     # Bewegt und rotiert die Kamera frei basierend auf Spielereingaben.
@@ -405,6 +511,10 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                 # um zu verhindern, dass der Spieler außerhalb der Track-Grenzen festhängt.
                 self.current_speed = -(self.current_speed * OBSTACLE_HIT_SPEED_RETENTION + MIN_BOUNCE_BACK_FORCE)
 
+                # Soundeffekt bei Kollision (nur wenn Sound geladen und nicht zerstört/finished)
+                if self.engine_sounds and not self.finished and not self.destroyed:
+                    self.collision_sound.play()
+
                 # Zentrifugalkraft zurücksetzen um zu verhindern dass Spieler in Wand stecken bleibt
                 self.centri = 0
                 self.steering_left = False
@@ -552,6 +662,23 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         self.bob_phase = 0.0  # Bobbing-Phase zurücksetzen
         self.tilt_angle = 0.0  # Neigungswinkel zurücksetzen
 
+        # Engine-Sound zurücksetzen
+        if self.engine_sounds:
+            # Motor stoppen
+            if self.current_engine_sound:
+                self.current_engine_sound.stop()
+            # Lenkung stoppen (NEU)
+            if self.steering_sound_playing:
+                self.engine_sounds["steering"].stop()
+            # Regen stoppen
+            if self.regen_sound_playing:
+                self.regen_sound.stop()
+
+            self.current_engine_sound = None
+            self.current_engine_state = None
+            self.steering_sound_playing = False
+            self.regen_sound_playing = False
+
         # Bildschirmposition zurücksetzen
         self.rect.topleft = [
             NORMAL_ON_SCREEN_PLAYER_POSITION_X,
@@ -567,6 +694,21 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
     # und Abspielen der Explosionsanimation.
     def destroy(self):
         self.destroyed = True
+        # Engine-Sound stoppen
+        if self.engine_sounds:
+            if self.current_engine_sound:
+                self.current_engine_sound.stop()
+            # Lenkung stoppen (NEU)
+            if self.steering_sound_playing:
+                self.engine_sounds["steering"].stop()
+            # Regen stoppen
+            if self.regen_sound_playing:
+                self.regen_sound.stop()
+
+            self.current_engine_sound = None
+            self.current_engine_state = None
+            self.steering_sound_playing = False
+            self.regen_sound_playing = False
         print("Spielermaschine zerstört!")
 
     # Lässt die Spielermaschine Energie proportional zur übergebenen Kraft verlieren.

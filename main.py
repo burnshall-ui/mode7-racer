@@ -12,7 +12,7 @@ from settings.renderer_settings import *
 from settings.track_settings import *
 from settings.ui_settings import *
 from settings.ui_settings import GAME_OVER_OVERLAY_ALPHA, GAME_OVER_IMAGE, PRESS_SPACE_IMAGE
-from settings.ui_settings import FINISH_OVERLAY_ALPHA, get_pixel_font
+from settings.ui_settings import FINISH_OVERLAY_ALPHA, RACE_FINISHED_IMAGE, get_pixel_font
 from settings.key_settings import STD_CONFIRM_KEY, STD_DEBUG_RESTART_KEY
 from settings.league_settings import *
 from settings.music_settings import *
@@ -155,7 +155,9 @@ class App:
     # next_race - Nächstes Rennen, das nach der (Neu-)Initialisierung gespielt werden soll
     def init_race_mode(self, next_race):
         # Spieler kann dieses Flag über einen Tastendruck auf True setzen, um anzuzeigen, dass das nächste Rennen geladen werden soll
-        self.should_load_next_race = False 
+        self.should_load_next_race = False
+        # Trackt welcher Finish-Screen gerade angezeigt wird: "race_finished", "new_record", oder None
+        self.finish_screen_state = None 
 
         # Deklariert den Mode-7-Renderer.
         # Wird später beim Laden des Rennens initialisiert.
@@ -323,6 +325,12 @@ class App:
             # Wenn ja, wird ein Status-Flag in der Spielerinstanz gesetzt, falls noch nicht geschehen.
             if self.current_league.current_race().player_finished_race() and not self.player.finished:
                 self.player.finished = True
+                self.finish_screen_state = "race_finished"  # Zeige zuerst den Race Finished Screen
+
+                # Musik ausfaden und race-end Sound abspielen
+                mixer.music.fadeout(1500)  # Fade out über 1.5 Sekunden
+                pygame.time.set_timer(pygame.USEREVENT + 1, 1500)  # Timer für race-end Sound nach Fade
+
                 # Füge die Gesamtzeit des abgeschlossenen Rennens zur Liga-Gesamtzeit hinzu
                 race_total_time = sum(self.current_league.current_race().lap_times)
                 self.current_league.add_race_time(race_total_time)
@@ -390,6 +398,7 @@ class App:
 
         # Musik neu starten
         mixer.music.load(race.music_track_path)
+        mixer.music.set_volume(MUSIC_VOLUME * 0.4)  # 40% Lautstärke im Rennen
         mixer.music.play()
 
         # Rundenzeit-Anzeige zurücksetzen
@@ -709,7 +718,10 @@ class App:
 
         # Finish Screen Overlay zeichnen wenn Spieler das Rennen beendet hat
         if self.in_racing_mode and self.player.finished:
-            self.draw_race_finished_overlay()
+            if self.finish_screen_state == "race_finished":
+                self.draw_race_finished_overlay()
+            elif self.finish_screen_state == "new_record":
+                self.draw_new_record_screen()
 
         # Inhalt der gesamten Anzeige aktualisieren
         pygame.display.flip()
@@ -725,6 +737,12 @@ class App:
                 pygame.quit()
                 sys.exit()
 
+            # Race-End Sound abspielen nach Musik-Fade
+            if event.type == pygame.USEREVENT + 1:
+                mixer.music.load(BGM_DICT["race-end"])
+                mixer.music.play()
+                pygame.time.set_timer(pygame.USEREVENT + 1, 0)  # Timer deaktivieren
+
             # Prüft auf Tastendrücke in Menübildschirmen
             if event.type == pygame.KEYDOWN:
                 # ESC: Pause-Menü während des Rennens
@@ -732,7 +750,25 @@ class App:
                     self.show_pause_menu()
 
                 if event.key == STD_CONFIRM_KEY and self.player.finished:
-                    self.should_load_next_race = True
+                    # Wenn auf dem race_finished Screen: prüfen ob neuer Rekord
+                    if self.finish_screen_state == "race_finished":
+                        # Prüfe ob ein neuer Rekord aufgestellt wurde
+                        has_new_record = False
+                        if self.current_race_record_info:
+                            has_new_record = (self.current_race_record_info.get("new_best_lap", False) or
+                                            self.current_race_record_info.get("new_best_total", False))
+
+                        if has_new_record:
+                            # Wechsel zum New Record Screen
+                            self.finish_screen_state = "new_record"
+                        else:
+                            # Kein neuer Rekord: direkt zum nächsten Rennen
+                            self.should_load_next_race = True
+                            self.finish_screen_state = None
+                    # Wenn auf dem new_record Screen: zum nächsten Rennen
+                    elif self.finish_screen_state == "new_record":
+                        self.should_load_next_race = True
+                        self.finish_screen_state = None
                 # Game Over: Leertaste zum Neustarten
                 if event.key == STD_CONFIRM_KEY and self.player.destroyed:
                     self.load_race(self.current_league.current_race())
@@ -814,10 +850,9 @@ class App:
         small_font = self.race_finished_fonts['small']
         tiny_font = self.race_finished_fonts['tiny']
 
-        # "RACE FINISHED!" Titel
-        title_text = title_font.render("RACE FINISHED!", True, (255, 255, 100))
-        title_rect = title_text.get_rect(center=(WIDTH // 2, int(HEIGHT * 0.3)))
-        self.screen.blit(title_text, title_rect)
+        # "RACE FINISHED!" Grafik
+        title_rect = RACE_FINISHED_IMAGE.get_rect(center=(WIDTH // 2, int(HEIGHT * 0.3)))
+        self.screen.blit(RACE_FINISHED_IMAGE, title_rect)
 
         # Gesamtzeit
         current_race = self.current_league.current_race()
@@ -839,7 +874,7 @@ class App:
             if best_lap:
                 best_lap_text = small_font.render(
                     f"Best Lap: {self.format_time(best_lap)}",
-                    True, (150, 150, 200)
+                    True, (255, 255, 100)
                 )
                 best_lap_rect = best_lap_text.get_rect(center=(WIDTH // 2, y_offset))
                 self.screen.blit(best_lap_text, best_lap_rect)
@@ -853,6 +888,86 @@ class App:
         option2 = tiny_font.render("R: Restart", True, (200, 200, 200))
         option2_rect = option2.get_rect(center=(WIDTH // 2, y_offset + 18 * RENDER_SCALE))
         self.screen.blit(option2, option2_rect)
+
+    # Zeichnet den New Record Screen (im Menü-Stil)
+    def draw_new_record_screen(self):
+        """Zeigt den New Record Screen im Retro-Menü-Stil an"""
+        # Menü-Farben (wie im Hauptmenü)
+        COLOR_BG_TOP = (10, 5, 30)
+        COLOR_BG_BOTTOM = (0, 0, 0)
+        COLOR_TITLE = (255, 220, 0)  # Gold
+        COLOR_TEXT = (180, 200, 255)  # Helles Blau-Weiß
+        COLOR_ACCENT = (0, 255, 255)  # Cyan
+        COLOR_BORDER = (100, 100, 150)
+        COLOR_RECORD = (255, 50, 200)  # Magenta für neue Rekorde
+
+        # Gradienten-Hintergrund zeichnen
+        for y in range(HEIGHT):
+            ratio = y / HEIGHT
+            r = int(COLOR_BG_TOP[0] * (1 - ratio) + COLOR_BG_BOTTOM[0] * ratio)
+            g = int(COLOR_BG_TOP[1] * (1 - ratio) + COLOR_BG_BOTTOM[1] * ratio)
+            b = int(COLOR_BG_TOP[2] * (1 - ratio) + COLOR_BG_BOTTOM[2] * ratio)
+            pygame.draw.line(self.screen, (r, g, b), (0, y), (WIDTH, y))
+
+        # Fonts
+        font_title = pygame.font.Font(None, 80)
+        font_text = pygame.font.Font(None, 40)
+        font_small = pygame.font.Font(None, 28)
+
+        # "NEW RECORD!" Titel mit Glow
+        title_text = "NEW RECORD!"
+        for offset in [6, 4, 2]:
+            glow = font_title.render(title_text, True, COLOR_TITLE)
+            glow.set_alpha(80)
+            self.screen.blit(glow, (WIDTH // 2 - glow.get_width() // 2 + offset, 50 + offset))
+
+        title = font_title.render(title_text, True, COLOR_TITLE)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 50))
+
+        # Rekord-Informationen
+        y_offset = 150
+
+        if self.current_race_record_info:
+            new_best_lap = self.current_race_record_info.get("new_best_lap", False)
+            new_best_total = self.current_race_record_info.get("new_best_total", False)
+            best_lap = self.current_race_record_info.get("best_lap")
+            best_total = self.current_race_record_info.get("best_total")
+
+            # Rahmen um die Rekorde
+            records_to_show = []
+            if new_best_lap:
+                records_to_show.append(("BEST LAP", best_lap))
+            if new_best_total:
+                records_to_show.append(("BEST TOTAL", best_total))
+
+            if records_to_show:
+                # Rahmen zeichnen
+                frame_height = len(records_to_show) * 60 + 40
+                frame_rect = pygame.Rect(WIDTH // 2 - 220, y_offset - 20, 440, frame_height)
+                pygame.draw.rect(self.screen, COLOR_BORDER, frame_rect, 3)
+
+                # Rekorde anzeigen
+                for i, (label, time_val) in enumerate(records_to_show):
+                    record_y = y_offset + i * 60
+
+                    # Label in Cyan
+                    label_text = font_text.render(label, True, COLOR_ACCENT)
+                    label_rect = label_text.get_rect(center=(WIDTH // 2, record_y))
+                    self.screen.blit(label_text, label_rect)
+
+                    # Zeit in Magenta
+                    time_text = font_text.render(self.format_time(time_val), True, COLOR_RECORD)
+                    time_rect = time_text.get_rect(center=(WIDTH // 2, record_y + 30))
+                    self.screen.blit(time_text, time_rect)
+
+        # "PRESS SPACE TO CONTINUE" am unteren Rand
+        continue_text = font_small.render("PRESS SPACE TO CONTINUE", True, COLOR_TEXT)
+        continue_rect = continue_text.get_rect(center=(WIDTH // 2, HEIGHT - 40))
+        self.screen.blit(continue_text, continue_rect)
+
+        # Scanlines für Retro-Effekt
+        for y in range(0, HEIGHT, 4):
+            pygame.draw.line(self.screen, (0, 0, 0, 30), (0, y), (WIDTH, y), 1)
 
     # Hilfsfunktion zum Formatieren von Zeit in Millisekunden zu MM:SS.mmm
     def format_time(self, time_ms):

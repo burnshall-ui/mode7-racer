@@ -61,6 +61,7 @@ PRESS_SPACE_IMAGE = load_scaled_ui_image('gfx/ui/press_space.png')
 
 # Finish Screen Einstellungen
 FINISH_OVERLAY_ALPHA = 200  # Transparenz des dunklen Overlays (0-255)
+RACE_FINISHED_IMAGE = load_scaled_ui_image('gfx/ui/race_finished.png')
 
 # Font für Text-Rendering (wird beim ersten Gebrauch initialisiert)
 _font_cache = {}

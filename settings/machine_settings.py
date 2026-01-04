@@ -24,7 +24,7 @@ OBSTACLE_HIT_SPEED_RETENTION = 0.5 # Prozentsatz der Geschwindigkeit, den die Sp
 MIN_BOUNCE_BACK_FORCE = 0.005 # Minimale Kraft, die in entgegengesetzter Richtung angewendet wird, wenn der Spieler gegen eine Wand prallt (um zu verhindern, dass der Spieler knapp außerhalb der Streckengrenzen stecken bleibt)
 
 # Geschwindigkeits-Skalierung (1.0 = Original, 0.8 = 80%)
-SPEED_SCALE = 1.0
+SPEED_SCALE = 0.75
 
 # Referenzwerte für Maschinen-Statistiken
 PURPLE_COMET_ACCELERATION = (5000 / 750) * SPEED_SCALE
@@ -106,7 +106,7 @@ PURPLE_COMET = Machine(
     max_centri = 20, 
     centri_increase = 10,
     centri_decrease = 50,
-    jump_duration_multiplier = 1.6 / PURPLE_COMET_MAX_SPEED, # Sprung: 1.6 Sekunden bei Höchstgeschwindigkeit (war 2.0, jetzt 20% kürzer)
+    jump_duration_multiplier = 1.2 / PURPLE_COMET_MAX_SPEED, # Sprung: 1.2 Sekunden bei Höchstgeschwindigkeit (war 1.6, jetzt 25% kürzer)
     boost_duration = 2,
     max_energy = STD_MAX_ENERGY,
     boost_cost = 19,

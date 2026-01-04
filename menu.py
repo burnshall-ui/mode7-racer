@@ -7,6 +7,7 @@ import time
 from settings.renderer_settings import WIDTH, HEIGHT, WIN_RES
 from settings.league_settings import SINGLE_MODE_RACES
 from settings.music_settings import BGM_DICT, MUSIC_VOLUME
+from highscores import HighscoreManager
 
 class Menu:
     def __init__(self, screen):
@@ -75,7 +76,7 @@ class Menu:
             print(f"Logo-Image nicht gefunden: {e}, verwende Text-Fallback")
 
         # Menü-Zustand
-        self.current_screen = "main"  # "main" oder "track_select"
+        self.current_screen = "main"  # "main", "track_select" oder "highscores"
         self.selected_index = 0
         self.selected_race = 0
 
@@ -85,6 +86,9 @@ class Menu:
             "Event Horizon I",
             "Space 3"
         ]
+
+        # Highscore-Manager initialisieren
+        self.highscore_manager = HighscoreManager()
 
     def show_intro(self):
         """Zeigt das animierte Logo-Intro"""
@@ -199,12 +203,16 @@ class Menu:
                         running = self.handle_main_menu_input(event.key)
                     elif self.current_screen == "track_select":
                         running = self.handle_track_select_input(event.key)
+                    elif self.current_screen == "highscores":
+                        running = self.handle_highscores_input(event.key)
 
             # Bildschirm zeichnen
             if self.current_screen == "main":
                 self.draw_main_menu()
             elif self.current_screen == "track_select":
                 self.draw_track_select()
+            elif self.current_screen == "highscores":
+                self.draw_highscores()
 
             pygame.display.flip()
             self.clock.tick(60)
@@ -229,8 +237,9 @@ class Menu:
             if self.selected_index == 0:  # Start Race
                 self.current_screen = "track_select"
                 self.selected_index = 0
-            elif self.selected_index == 1:  # Options (noch nicht implementiert)
-                pass
+            elif self.selected_index == 1:  # Highscore
+                self.current_screen = "highscores"
+                self.selected_index = 0
             elif self.selected_index == 2:  # Quit
                 pygame.quit()
                 sys.exit()
@@ -323,7 +332,7 @@ class Menu:
         pygame.draw.rect(self.screen, self.COLOR_BORDER, menu_box_rect, 3)
 
         # Menü-Optionen - kompakt mit gleichmäßigem Padding
-        menu_items = ["START RACE", "OPTIONS", "QUIT"]
+        menu_items = ["START RACE", "HIGHSCORE", "QUIT"]
         start_y = menu_box_y + 25
 
         for i, item in enumerate(menu_items):
@@ -410,3 +419,85 @@ class Menu:
 
         # Scan-Lines
         self.draw_scanlines()
+
+    def handle_highscores_input(self, key):
+        """Behandelt Eingaben im Highscore-Screen"""
+        if key == pygame.K_ESCAPE or key == pygame.K_RETURN or key == pygame.K_SPACE:
+            self.current_screen = "main"
+            self.selected_index = 0
+
+        return True
+
+    def draw_highscores(self):
+        """Zeichnet den Highscore-Screen"""
+        # Gradient-Hintergrund
+        self.draw_gradient_background()
+
+        # Animations-Werte
+        elapsed = time.time() - self.start_time
+
+        # Titel mit Glow
+        title_text = "HIGHSCORES"
+        for offset in [6, 4, 2]:
+            glow = self.font_title.render(title_text, True, self.COLOR_TITLE)
+            glow.set_alpha(80)
+            self.screen.blit(glow, (WIDTH // 2 - glow.get_width() // 2 + offset, 30 + offset))
+
+        title = self.font_title.render(title_text, True, self.COLOR_TITLE)
+        self.screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 30))
+
+        # Highscores anzeigen
+        y_offset = 110
+
+        # Alle Highscores holen
+        all_highscores = self.highscore_manager.highscores
+
+        if not all_highscores:
+            # Keine Highscores vorhanden
+            no_scores_text = self.font_menu.render("NO RECORDS YET", True, self.COLOR_TEXT)
+            no_scores_rect = no_scores_text.get_rect(center=(WIDTH // 2, HEIGHT // 2))
+            self.screen.blit(no_scores_text, no_scores_rect)
+        else:
+            # Kompakteres Layout: 60px pro Track statt 70px
+            track_height = 60
+            frame_height = len(all_highscores) * track_height + 20
+            frame_rect = pygame.Rect(30, y_offset - 10, WIDTH - 60, frame_height)
+            pygame.draw.rect(self.screen, self.COLOR_BORDER, frame_rect, 3)
+
+            # Highscores anzeigen
+            for i, (track_name, scores) in enumerate(all_highscores.items()):
+                track_y = y_offset + i * track_height
+
+                # Track-Name in Cyan
+                track_text = self.font_small.render(track_name.upper(), True, self.COLOR_ACCENT)
+                self.screen.blit(track_text, (50, track_y))
+
+                # Best Lap in Weiß
+                best_lap = scores.get("best_lap")
+                if best_lap:
+                    lap_time_str = self.format_time(best_lap)
+                    lap_text = self.font_small.render(f"LAP: {lap_time_str}", True, self.COLOR_TEXT)
+                    self.screen.blit(lap_text, (50, track_y + 25))
+
+                # Best Total in Magenta
+                best_total = scores.get("best_total")
+                if best_total:
+                    total_time_str = self.format_time(best_total)
+                    total_text = self.font_small.render(f"TOTAL: {total_time_str}", True, self.COLOR_SELECTED)
+                    self.screen.blit(total_text, (280, track_y + 25))
+
+        # "PRESS ESC TO RETURN" am unteren Rand
+        return_text = self.font_small.render("PRESS ESC TO RETURN", True, self.COLOR_TEXT)
+        return_rect = return_text.get_rect(center=(WIDTH // 2, HEIGHT - 30))
+        self.screen.blit(return_text, return_rect)
+
+        # Scan-Lines
+        self.draw_scanlines()
+
+    def format_time(self, time_ms):
+        """Formatiert Millisekunden zu MM:SS.mmm"""
+        total_seconds = int(time_ms // 1000)
+        milliseconds = int(time_ms % 1000)
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+        return f"{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
