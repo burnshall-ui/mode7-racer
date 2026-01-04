@@ -5,13 +5,9 @@ Prototyp eines F-Zero-artigen Rennspiels, entwickelt mit Python/pygame.
 **Dies ist ein Fork von [pschuermann97/mode7-racer](https://github.com/pschuermann97/mode7-racer) mit Gameplay-Verbesserungen.**
 
 <p float="left">
-  <img width="448" alt="0" src="https://user-images.githubusercontent.com/28012017/235456613-3b90fb13-49b9-4e57-9858-cec4e5bd37cd.png">
-  <img width="448" alt="1" src="https://user-images.githubusercontent.com/28012017/235456656-672e1c48-5d49-4b36-acf8-dbaac1d18623.png">
-</p>
-
-<p float="left">
-  <img width="448" alt="2" src="https://user-images.githubusercontent.com/28012017/235456666-2fbcc8e8-52da-46f9-be8d-3eae1fcce96b.png">
-  <img width="449" alt="3" src="https://user-images.githubusercontent.com/28012017/235456683-48ec5b33-b2ad-4ee9-9655-f82cf4b70983.png">
+  <img width="32%" alt="Screenshot 1" src="gfx/screenshots/screen1.png">
+  <img width="32%" alt="Screenshot 2" src="gfx/screenshots/screen2.png">
+  <img width="32%" alt="Screenshot 3" src="gfx/screenshots/screen3.png">
 </p>
 
 ## Aktueller Status
