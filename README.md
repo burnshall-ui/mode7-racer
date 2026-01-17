@@ -56,6 +56,11 @@ Die anderen Strecken sind noch in Arbeit - die Kollisionsdaten passen noch nicht
   - Recovery-Geschwindigkeit 4x schneller (50 statt 13)
   - Energieanzeige korrekt skaliert
   - Konsistentere Schadensberechnung
+- **Gamepad/Controller-Unterstützung:**
+  - Kompatibel mit den meisten USB-Controllern (Logitech, Xbox, PlayStation, etc.)
+  - D-Pad oder Analog-Stick für Lenkung
+  - Konfigurierbare Buttons und Trigger
+  - Funktioniert in Menüs und während des Spiels
 
 Das in dieser Implementierung verwendete Mode7-Rendering-Modul basiert auf dem Mode7-Tutorial von Coder Space (https://www.youtube.com/watch?v=D0MPYZYe40E).
 
@@ -146,6 +151,8 @@ Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mo
 
 ## Steuerung (Spiel)
 
+### Tastatur
+
 | Taste | Funktion |
 |-------|----------|
 | **Pfeil Links/Rechts** | Lenken |
@@ -155,13 +162,27 @@ Du findest den ursprünglichen Test-Build unter https://pschuermann97.itch.io/mo
 | **ESC** | Pause-Menü öffnen |
 | **R** | Rennen neu starten (Debug) |
 
+### Gamepad/Controller
+
+Das Spiel unterstützt die meisten USB-Controller (Logitech, Xbox, PlayStation, etc.).
+
+| Button | Funktion |
+|--------|----------|
+| **D-Pad / Linker Stick** | Lenken |
+| **X / Kreuz (Button 0)** | Beschleunigen / Bestätigen |
+| **Dreieck (Button 3)** | Bremsen |
+| **Kreis (Button 1)** | Booster |
+| **Start (Button 9)** | Pause-Menü |
+
+**Tipp:** Die Button-Belegung kann in `settings/gamepad_settings.py` angepasst werden. Setze dort `GAMEPAD_DEBUG = True`, um die Button-Nummern deines Controllers in der Konsole zu sehen.
+
 ### Menü-Steuerung
 
-| Taste | Funktion |
-|-------|----------|
-| **Pfeil Hoch/Runter** | Menü-Navigation |
-| **Enter / Leertaste** | Bestätigen |
-| **ESC** | Pause-Menü schließen |
+| Taste / Button | Funktion |
+|----------------|----------|
+| **Pfeil Hoch/Runter** oder **D-Pad** | Menü-Navigation |
+| **Enter / Leertaste** oder **X-Button** | Bestätigen |
+| **ESC** oder **Start-Button** | Pause-Menü schließen |
 
 Jedes Rennen erfordert 3 Runden zum Abschluss.
 Nach Abschluss eines Rennens drücke Leertaste, um zum nächsten zu springen.

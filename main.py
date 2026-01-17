@@ -16,6 +16,7 @@ from settings.ui_settings import FINISH_OVERLAY_ALPHA, RACE_FINISHED_IMAGE, get_
 from settings.key_settings import STD_CONFIRM_KEY, STD_DEBUG_RESTART_KEY
 from settings.league_settings import *
 from settings.music_settings import *
+from settings.gamepad_settings import GAMEPAD_DEBUG
 
 # Weitere Importe aus diesem Projekt
 from mode7 import Mode7
@@ -67,6 +68,17 @@ class App:
         mixer.init()
         mixer.music.set_volume(MUSIC_VOLUME)
 
+        # Gamepad/Controller initialisieren
+        pygame.joystick.init()
+        self.gamepad = None
+        if pygame.joystick.get_count() > 0:
+            self.gamepad = pygame.joystick.Joystick(0)
+            self.gamepad.init()
+            print(f"Gamepad gefunden: {self.gamepad.get_name()}")
+            print(f"  Achsen: {self.gamepad.get_numaxes()}, Buttons: {self.gamepad.get_numbuttons()}")
+        else:
+            print("Kein Gamepad gefunden - nur Tastatursteuerung aktiv")
+
         # Highscore-Manager initialisieren
         self.highscore_manager = HighscoreManager()
 
@@ -91,7 +103,7 @@ class App:
         # ------------- Menü anzeigen -----------------------
 
         # Zeige Startbildschirm und Streckenauswahl
-        menu = Menu(self.screen)
+        menu = Menu(self.screen, gamepad=self.gamepad)
         selected_race_index = menu.run()
 
         # Einzelrennen-Modus (über Menü ausgewählt)
@@ -194,7 +206,8 @@ class App:
         # oder ein Strecken-Gimmick trifft.
         self.player = Player(
             machine = player_machine,
-            current_race = next_race
+            current_race = next_race,
+            gamepad = self.gamepad
         )
 
         # Spielerinstanz und Spieler-Schatten-Sprite zur Sprite-Gruppe hinzufügen, um es rendern zu können
@@ -775,6 +788,34 @@ class App:
                 if event.key == STD_DEBUG_RESTART_KEY and DEBUG_RESTART_RACE_ON_R:
                     self.load_race(self.current_league.current_race())
 
+            # Gamepad-Button-Events (nur sichere Buttons 0-3 und 8-9)
+            if event.type == pygame.JOYBUTTONDOWN and self.gamepad:
+                from settings.gamepad_settings import GAMEPAD_CONFIRM_BUTTON, GAMEPAD_PAUSE_BUTTON
+                # Ignoriere Trigger-Buttons (4-7)
+                if event.button >= 4 and event.button <= 7:
+                    continue
+                # Start-Button: Pause-Menü öffnen
+                if event.button == GAMEPAD_PAUSE_BUTTON and self.in_racing_mode and not self.player.finished and not self.player.destroyed:
+                    self.show_pause_menu()
+                # Confirm-Button bei Finish
+                if event.button == GAMEPAD_CONFIRM_BUTTON and self.player.finished:
+                    if self.finish_screen_state == "race_finished":
+                        has_new_record = False
+                        if self.current_race_record_info:
+                            has_new_record = (self.current_race_record_info.get("new_best_lap", False) or
+                                            self.current_race_record_info.get("new_best_total", False))
+                        if has_new_record:
+                            self.finish_screen_state = "new_record"
+                        else:
+                            self.should_load_next_race = True
+                            self.finish_screen_state = None
+                    elif self.finish_screen_state == "new_record":
+                        self.should_load_next_race = True
+                        self.finish_screen_state = None
+                # Confirm-Button bei Game Over
+                if event.button == GAMEPAD_CONFIRM_BUTTON and self.player.destroyed:
+                    self.load_race(self.current_league.current_race())
+
     # Hauptspielschleife, läuft bis zur Beendigung des Prozesses.
     def run(self):
         while True:
@@ -1019,8 +1060,29 @@ class App:
         time_rect = time_text.get_rect(center=(WIDTH // 2, y_position + 30 * RENDER_SCALE))
         self.screen.blit(time_text, time_rect)
 
+    def _wait_for_button_release(self, button_id):
+        """Wartet bis ein Gamepad-Button losgelassen wird"""
+        if not self.gamepad:
+            return
+        # Kurz warten und Events leeren
+        pygame.time.wait(50)
+        pygame.event.clear()
+        # Warten bis Button losgelassen (max 500ms)
+        start = time.time()
+        while time.time() - start < 0.5:
+            pygame.event.pump()
+            try:
+                if not self.gamepad.get_button(button_id):
+                    break
+            except:
+                break
+            pygame.time.wait(10)
+        pygame.event.clear()
+
     def show_pause_menu(self):
         """Zeigt das Pause-Menü und behandelt die Menü-Navigation"""
+        from settings.gamepad_settings import GAMEPAD_CONFIRM_BUTTON, GAMEPAD_PAUSE_BUTTON, GAMEPAD_DEADZONE
+
         paused = True
         selected_option = 0
         menu_options = ["CONTINUE", "RESTART", "QUIT"]
@@ -1046,8 +1108,18 @@ class App:
             confirm_sound = None
 
         clock = pygame.time.Clock()
+        gamepad_cooldown = 0.3  # Initialer Cooldown um "klebende" Buttons zu ignorieren
+        GAMEPAD_COOLDOWN_TIME = 0.25
+        last_time = time.time()
 
         while paused:
+            # Delta für Cooldown
+            current_time = time.time()
+            delta = current_time - last_time
+            last_time = current_time
+            if gamepad_cooldown > 0:
+                gamepad_cooldown -= delta
+
             # Events behandeln
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -1078,6 +1150,59 @@ class App:
                     elif event.key == pygame.K_ESCAPE:
                         # ESC schließt das Pause-Menü
                         paused = False
+
+                # Gamepad-Button Events (in der gleichen Schleife!)
+                if event.type == pygame.JOYBUTTONDOWN and gamepad_cooldown <= 0:
+                    # Nur sichere Buttons (0-3 für Face, 8-9 für Select/Start)
+                    if event.button <= 3 or event.button >= 8:
+                        if event.button == GAMEPAD_CONFIRM_BUTTON:
+                            if confirm_sound:
+                                confirm_sound.play()
+                            gamepad_cooldown = GAMEPAD_COOLDOWN_TIME
+                            if selected_option == 0:  # Continue
+                                paused = False
+                                self._wait_for_button_release(GAMEPAD_CONFIRM_BUTTON)
+                            elif selected_option == 1:  # Restart
+                                self.load_race(self.current_league.current_race())
+                                paused = False
+                                self._wait_for_button_release(GAMEPAD_CONFIRM_BUTTON)
+                            elif selected_option == 2:
+                                pygame.quit()
+                                sys.exit()
+                        elif event.button == GAMEPAD_PAUSE_BUTTON:
+                            gamepad_cooldown = GAMEPAD_COOLDOWN_TIME
+                            paused = False
+                            self._wait_for_button_release(GAMEPAD_PAUSE_BUTTON)
+
+            # Gamepad D-Pad für Navigation (mit Cooldown)
+            if self.gamepad and gamepad_cooldown <= 0:
+                try:
+                    nav_up = False
+                    nav_down = False
+
+                    # D-Pad (Hat) prüfen
+                    if self.gamepad.get_numhats() > 0:
+                        hat = self.gamepad.get_hat(0)
+                        nav_up = hat[1] > 0
+                        nav_down = hat[1] < 0
+                    else:
+                        # Fallback: Stick
+                        stick_y = self.gamepad.get_axis(1)
+                        nav_up = stick_y < -0.6
+                        nav_down = stick_y > 0.6
+
+                    if nav_up:
+                        selected_option = (selected_option - 1) % len(menu_options)
+                        if beep_sound:
+                            beep_sound.play()
+                        gamepad_cooldown = GAMEPAD_COOLDOWN_TIME
+                    elif nav_down:
+                        selected_option = (selected_option + 1) % len(menu_options)
+                        if beep_sound:
+                            beep_sound.play()
+                        gamepad_cooldown = GAMEPAD_COOLDOWN_TIME
+                except:
+                    pass
 
             # Halbtransparentes Overlay über das Spiel zeichnen
             overlay = pygame.Surface((WIDTH, HEIGHT))

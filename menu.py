@@ -7,12 +7,23 @@ import time
 from settings.renderer_settings import WIDTH, HEIGHT, WIN_RES
 from settings.league_settings import SINGLE_MODE_RACES
 from settings.music_settings import BGM_DICT, MUSIC_VOLUME
+from settings.gamepad_settings import (
+    GAMEPAD_CONFIRM_BUTTON, GAMEPAD_PAUSE_BUTTON,
+    GAMEPAD_DPAD_IS_AXIS, GAMEPAD_DPAD_X_AXIS, GAMEPAD_DPAD_Y_AXIS,
+    GAMEPAD_DPAD_UP_BUTTON, GAMEPAD_DPAD_DOWN_BUTTON,
+    GAMEPAD_STEER_AXIS, GAMEPAD_DEADZONE
+)
 from highscores import HighscoreManager
 
 class Menu:
-    def __init__(self, screen):
+    def __init__(self, screen, gamepad=None):
         self.screen = screen
         self.clock = pygame.time.Clock()
+        self.gamepad = gamepad  # Gamepad-Referenz speichern
+
+        # Gamepad-Cooldown um mehrfache Inputs zu verhindern
+        self.gamepad_cooldown = 0.5  # Startet mit Cooldown um initiale Trigger-Werte zu ignorieren
+        self.GAMEPAD_COOLDOWN_TIME = 0.25  # 250ms zwischen Inputs
 
         # Pygame Font initialisieren
         pygame.font.init()
@@ -181,8 +192,12 @@ class Menu:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN and elapsed >= zoom_duration:
-                    return  # Intro beenden, nur nach Zoom-Animation
+                # Intro beenden mit JEDER Taste oder JEDEM Button
+                if elapsed >= zoom_duration:
+                    if event.type == pygame.KEYDOWN:
+                        return
+                    if event.type == pygame.JOYBUTTONDOWN:
+                        return
 
     def run(self):
         """Hauptschleife des Menüs - gibt die gewählte Strecke zurück"""
@@ -190,8 +205,18 @@ class Menu:
         self.show_intro()
 
         running = True
+        last_time = time.time()
 
         while running:
+            # Delta-Zeit für Cooldown berechnen
+            current_time = time.time()
+            delta = current_time - last_time
+            last_time = current_time
+
+            # Gamepad-Cooldown runterzählen
+            if self.gamepad_cooldown > 0:
+                self.gamepad_cooldown -= delta
+
             # Events behandeln
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -205,6 +230,38 @@ class Menu:
                         running = self.handle_track_select_input(event.key)
                     elif self.current_screen == "highscores":
                         running = self.handle_highscores_input(event.key)
+
+                # Gamepad-Button Events (nur für sichere Buttons, nicht Trigger!)
+                if event.type == pygame.JOYBUTTONDOWN and self.gamepad_cooldown <= 0:
+                    # Nur Buttons 0-3 und 8-9 akzeptieren (Face-Buttons + Select/Start)
+                    # Buttons 4-7 sind oft Shoulder/Trigger und können Probleme machen
+                    if event.button in [GAMEPAD_CONFIRM_BUTTON, GAMEPAD_PAUSE_BUTTON] and event.button <= 3 or event.button >= 8:
+                        self.gamepad_cooldown = self.GAMEPAD_COOLDOWN_TIME
+                        if event.button == GAMEPAD_CONFIRM_BUTTON:
+                            if self.current_screen == "main":
+                                running = self.handle_main_menu_input(pygame.K_RETURN)
+                            elif self.current_screen == "track_select":
+                                running = self.handle_track_select_input(pygame.K_RETURN)
+                            elif self.current_screen == "highscores":
+                                running = self.handle_highscores_input(pygame.K_RETURN)
+                        elif event.button == GAMEPAD_PAUSE_BUTTON:
+                            if self.current_screen != "main":
+                                if self.current_screen == "track_select":
+                                    running = self.handle_track_select_input(pygame.K_ESCAPE)
+                                elif self.current_screen == "highscores":
+                                    running = self.handle_highscores_input(pygame.K_ESCAPE)
+
+            # Gamepad-Stick für Navigation prüfen (nur wenn Cooldown abgelaufen)
+            if self.gamepad and self.gamepad_cooldown <= 0:
+                gamepad_action = self.poll_gamepad()
+                if gamepad_action:
+                    self.gamepad_cooldown = self.GAMEPAD_COOLDOWN_TIME
+                    if self.current_screen == "main":
+                        running = self.handle_main_menu_input(gamepad_action)
+                    elif self.current_screen == "track_select":
+                        running = self.handle_track_select_input(gamepad_action)
+                    elif self.current_screen == "highscores":
+                        running = self.handle_highscores_input(gamepad_action)
 
             # Bildschirm zeichnen
             if self.current_screen == "main":
@@ -220,6 +277,32 @@ class Menu:
         # Menü-Musik stoppen bevor Rennen startet
         mixer.music.stop()
         return self.selected_race
+
+    def poll_gamepad(self):
+        """Fragt das Gamepad ab und gibt die entsprechende pygame.Key-Konstante zurück"""
+        if not self.gamepad:
+            return None
+
+        try:
+            # D-Pad (Hat) für Navigation
+            if self.gamepad.get_numhats() > 0:
+                hat = self.gamepad.get_hat(0)  # (x, y) Tuple
+                if hat[1] > 0:  # Hoch
+                    return pygame.K_UP
+                elif hat[1] < 0:  # Runter
+                    return pygame.K_DOWN
+            else:
+                # Fallback: Stick wenn kein D-Pad
+                stick_y = self.gamepad.get_axis(1)
+                if stick_y < -0.6:
+                    return pygame.K_UP
+                elif stick_y > 0.6:
+                    return pygame.K_DOWN
+
+        except Exception as e:
+            pass
+
+        return None
 
     def handle_main_menu_input(self, key):
         """Behandelt Eingaben im Hauptmenü"""

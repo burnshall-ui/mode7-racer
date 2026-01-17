@@ -4,6 +4,12 @@ from pygame import mixer
 
 from settings.debug_settings import IN_DEV_MODE, COLLISION_DETECTION_OFF # Debug-Konfiguration
 from settings.key_settings import STD_ACCEL_KEY, STD_LEFT_KEY, STD_RIGHT_KEY, STD_BRAKE_KEY, STD_BOOST_KEY # Tastenbelegungs-Konfiguration
+from settings.gamepad_settings import (
+    GAMEPAD_STEER_AXIS, GAMEPAD_DEADZONE, GAMEPAD_STEER_SENSITIVITY,
+    GAMEPAD_GAS_BUTTON, GAMEPAD_BRAKE_BUTTON, GAMEPAD_BOOST_BUTTON,
+    USE_TRIGGER_FOR_GAS, GAMEPAD_GAS_TRIGGER_AXIS, GAMEPAD_BRAKE_TRIGGER_AXIS,
+    GAMEPAD_DEBUG, USE_DPAD_FOR_STEERING
+) # Gamepad-Konfiguration
 from settings.renderer_settings import NORMAL_ON_SCREEN_PLAYER_POSITION_X, NORMAL_ON_SCREEN_PLAYER_POSITION_Y, RENDER_SCALE # Rendering-Konfiguration
 from settings.machine_settings import PLAYER_COLLISION_RECT_WIDTH, PLAYER_COLLISION_RECT_HEIGHT # Spieler-Kollisionsrechteck-Konfiguration
 from settings.machine_settings import HEIGHT_DURING_JUMP, HIT_COST_SPEED_FACTOR, MIN_BOUNCE_BACK_FORCE
@@ -18,7 +24,11 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
     # Konstruktor.
     # machine: die Maschine, die von diesem Spieler gesteuert wird
     # current_race: das Rennen, das der Spieler gerade fährt
-    def __init__(self, machine, current_race):
+    # gamepad: optionale Referenz zum Gamepad/Controller (None wenn kein Controller)
+    def __init__(self, machine, current_race, gamepad=None):
+        # Gamepad-Referenz speichern
+        self.gamepad = gamepad
+
         # Renn-Daten-Referenz,
         # um auf die Umgebung reagieren zu können
         # und die Spielerposition zu initialisieren
@@ -87,6 +97,11 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
 
         # Kurvenneigung: Schiff kippt beim Lenken (wie in F-Zero)
         self.tilt_angle = 0.0  # Aktueller Neigungswinkel in Grad
+
+        # Letzte Inputs (für Sound-Logik, wird in racing_mode_movement gesetzt)
+        self.last_input_gas = False
+        self.last_input_left = False
+        self.last_input_right = False
 
         # Engine-Sounds laden
         try:
@@ -244,11 +259,10 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
                     self.regen_sound_playing = False
                 return
 
-            # Tasteneingaben direkt abfragen für sofortige Sound-Reaktion
-            keys = pygame.key.get_pressed()
-            is_pressing_gas = keys[STD_ACCEL_KEY]
-            is_pressing_left = keys[STD_LEFT_KEY]
-            is_pressing_right = keys[STD_RIGHT_KEY]
+            # Inputs aus racing_mode_movement verwenden (kombiniert Tastatur + Gamepad)
+            is_pressing_gas = self.last_input_gas
+            is_pressing_left = self.last_input_left
+            is_pressing_right = self.last_input_right
 
             # ---------------------------------------------------------
             # Teil 1: Basis-Motorsound (Idle, Normal, Boost)
@@ -345,35 +359,106 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Tastenereignisse sammeln
         keys = pygame.key.get_pressed()
 
+        # ==================== GAMEPAD INPUT SAMMELN ====================
+        # Gamepad-Inputs werden mit Tastatur-Inputs kombiniert (OR-Verknüpfung)
+        gamepad_gas = False
+        gamepad_brake = False
+        gamepad_boost = False
+        gamepad_steer = 0.0  # -1.0 = voll links, +1.0 = voll rechts
+
+        if self.gamepad:
+            try:
+                # Gas-Button oder Trigger
+                if USE_TRIGGER_FOR_GAS:
+                    # Trigger-Wert: -1.0 bis 1.0 (manche Controller: 0.0 bis 1.0)
+                    trigger_val = self.gamepad.get_axis(GAMEPAD_GAS_TRIGGER_AXIS)
+                    gamepad_gas = trigger_val > 0.3  # 30% gedrückt = Gas
+                    brake_val = self.gamepad.get_axis(GAMEPAD_BRAKE_TRIGGER_AXIS)
+                    gamepad_brake = brake_val > 0.3
+                else:
+                    gamepad_gas = self.gamepad.get_button(GAMEPAD_GAS_BUTTON)
+                    gamepad_brake = self.gamepad.get_button(GAMEPAD_BRAKE_BUTTON)
+
+                # Boost-Button
+                gamepad_boost = self.gamepad.get_button(GAMEPAD_BOOST_BUTTON)
+
+                # Lenkung - D-Pad (Hat) oder Analog-Stick
+                if USE_DPAD_FOR_STEERING:
+                    # D-Pad ist bei den meisten Controllern ein "Hat"
+                    if self.gamepad.get_numhats() > 0:
+                        hat = self.gamepad.get_hat(0)  # (x, y) Tuple
+                        gamepad_steer = float(hat[0])  # -1 = links, 0 = neutral, 1 = rechts
+                    else:
+                        # Fallback: Stick verwenden wenn kein Hat vorhanden
+                        raw_steer = self.gamepad.get_axis(GAMEPAD_STEER_AXIS)
+                        if abs(raw_steer) > GAMEPAD_DEADZONE:
+                            gamepad_steer = raw_steer * GAMEPAD_STEER_SENSITIVITY
+                else:
+                    # Analog-Stick für Lenkung
+                    raw_steer = self.gamepad.get_axis(GAMEPAD_STEER_AXIS)
+                    if abs(raw_steer) > GAMEPAD_DEADZONE:
+                        gamepad_steer = raw_steer * GAMEPAD_STEER_SENSITIVITY
+
+                # Debug-Ausgabe
+                if GAMEPAD_DEBUG:
+                    # Alle gedrückten Buttons anzeigen
+                    for i in range(self.gamepad.get_numbuttons()):
+                        if self.gamepad.get_button(i):
+                            print(f"Gamepad Button {i} gedrückt")
+                    # Achsen nur bei signifikanter Bewegung
+                    for i in range(self.gamepad.get_numaxes()):
+                        axis_val = self.gamepad.get_axis(i)
+                        if abs(axis_val) > 0.5:
+                            print(f"Gamepad Achse {i}: {axis_val:.2f}")
+            except Exception as e:
+                # Falls was mit dem Gamepad schiefgeht, einfach ignorieren
+                if GAMEPAD_DEBUG:
+                    print(f"Gamepad Fehler: {e}")
+
+        # ==================== KOMBINIERTE INPUTS ====================
+        # Tastatur ODER Gamepad löst die Aktion aus
+        input_gas = keys[STD_ACCEL_KEY] or gamepad_gas
+        input_brake = keys[STD_BRAKE_KEY] or gamepad_brake
+        input_boost = keys[STD_BOOST_KEY] or gamepad_boost
+        input_left = keys[STD_LEFT_KEY] or gamepad_steer < -GAMEPAD_DEADZONE
+        input_right = keys[STD_RIGHT_KEY] or gamepad_steer > GAMEPAD_DEADZONE
+
+        # Inputs als Instanzvariablen speichern (für Sound-Logik in update())
+        self.last_input_gas = input_gas
+        self.last_input_left = input_left
+        self.last_input_right = input_right
+
         # Bestimmen, ob der Spieler in diesem Frame einen Boost starten möchte
-        if keys[STD_BOOST_KEY] and self.can_boost():
+        if input_boost and self.can_boost():
             self.last_boost_started_timestamp = time # Zeitstempel nehmen
             self.current_energy -= self.machine.boost_cost # Boosten kostet etwas Energie
             self.boosted = True # Status-Flag aktualisieren
 
         # Lenken.
-        if keys[STD_LEFT_KEY] and not self.finished:
+        if input_left and not self.finished:
             # Flags aktualisieren
             self.steering_left = True
             self.steering_right = False
-            
-            # Spieler rotieren
-            self.angle += self.machine.rotation_speed * delta
-            
-        if keys[STD_RIGHT_KEY] and not self.finished:
+
+            # Spieler rotieren - bei Gamepad proportional zum Stick-Ausschlag
+            steer_factor = abs(gamepad_steer) if gamepad_steer < 0 else 1.0
+            self.angle += self.machine.rotation_speed * delta * steer_factor
+
+        if input_right and not self.finished:
             # Flags aktualisieren
             self.steering_left = False
             self.steering_right = True
-            
-            # Spieler rotieren
-            self.angle -= self.machine.rotation_speed * delta
+
+            # Spieler rotieren - bei Gamepad proportional zum Stick-Ausschlag
+            steer_factor = gamepad_steer if gamepad_steer > 0 else 1.0
+            self.angle -= self.machine.rotation_speed * delta * steer_factor
 
         # ------------ Aktualisierung der Spielergeschwindigkeit ------------------
-        
+
         # Geschwindigkeit erhöhen, wenn Beschleunigungstaste gedrückt wird.
         # Beschleunigungseingabe sollte ignoriert werden, wenn die Geschwindigkeit derzeit über der aktuellen Maximalgeschwindigkeit der Maschine liegt.
         current_max_speed = self.machine.boosted_max_speed if self.boosted else self.machine.max_speed
-        if keys[STD_ACCEL_KEY] and not self.finished and not self.current_speed > current_max_speed:
+        if input_gas and not self.finished and not self.current_speed > current_max_speed:
             # Auf Fahranimation umschalten
             self.switch_to_driving_animation()
 
@@ -383,7 +468,7 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
             ) * delta
         # Geschwindigkeit stark verringern, wenn Bremstaste gedrückt wird.
         # Der Spieler kann nicht bremsen, wenn er in der Luft ist.
-        elif keys[STD_BRAKE_KEY] and not self.finished and not self.jumping:
+        elif input_brake and not self.finished and not self.jumping:
             # Egal ob Spieler sich vorwärts oder rückwärts bewegt:
             # Auf Leerlauf-Animation umschalten, wenn Spieler bremst
             self.switch_to_idle_animation()
@@ -441,7 +526,7 @@ class Player(pygame.sprite.Sprite, AnimatedMachine):
         # Wenn der Spieler in diesem Frame eine der Lenktasten drückt,
         # erhöht sich die Zentrifugalkraft (wird bei einem bestimmten Limit begrenzt).
         # Die Erhöhung der Zentrifugalkräfte ist proportional zur aktuellen Geschwindigkeit des Spielers.
-        if keys[STD_LEFT_KEY] or keys[STD_RIGHT_KEY]:
+        if input_left or input_right:
             self.centri += self.machine.centri_increase * self.current_speed * delta
             if self.centri > self.machine.max_centri:
                 self.centri = self.machine.max_centri
